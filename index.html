@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Re-charge The Charge — TDC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:20,23,26;
+    --parchment:237,230,214;
+    --charge:#ffb238;
+    --charge-dim:#8a6420;
+    --cardinal:#a31f34;
+    --brass:#8c6a3f;
+    --paper-line:#c9bfa6;
+    --cream-text:#f4efe4;
+    --ink-text:#2a241a;
+    --serif:'Fraunces', serif;
+    --sans:'IBM Plex Sans', sans-serif;
+    --mono:'IBM Plex Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;}
+  body{
+    background:rgb(var(--ink));color:var(--cream-text);font-family:var(--sans);
+    position:fixed;inset:0;touch-action:pan-x;
+  }
+  h1,h2,h3{font-family:var(--serif);font-weight:600;margin:0;letter-spacing:-0.01em;}
+  p{line-height:1.55;margin:0;}
+  a{color:inherit;}
+  button{font-family:var(--sans);cursor:pointer;}
+  canvas{position:fixed;inset:0;width:100%;height:100%;}
+  #bgCanvas{z-index:1;pointer-events:none;}
+  #fxCanvas{z-index:80;pointer-events:none;}
+
+  /* ---------- top HUD ---------- */
+  .top-hud{
+    position:fixed;top:0;left:0;right:0;z-index:70;
+    display:flex;align-items:center;gap:14px;
+    padding:calc(14px + env(safe-area-inset-top)) calc(18px + env(safe-area-inset-right)) 30px calc(18px + env(safe-area-inset-left));
+    background:linear-gradient(180deg, rgba(10,12,14,.75), rgba(10,12,14,0));
+    pointer-events:none;
+  }
+  .top-hud-brand{font-family:var(--mono);font-size:11px;color:var(--charge);white-space:nowrap;display:flex;align-items:center;gap:6px;}
+  .top-hud-brand .dot{width:6px;height:6px;border-radius:50%;background:var(--charge);box-shadow:0 0 8px 2px var(--charge);}
+  .top-hud-therm{flex:1;display:flex;align-items:center;gap:10px;opacity:0;max-width:0;overflow:hidden;transition:opacity .5s ease, max-width .5s ease;}
+  .top-hud-therm.show{opacity:1;max-width:600px;}
+  .therm-track{flex:1;height:6px;border-radius:3px;background:#2a2f35;overflow:hidden;}
+  .therm-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--charge-dim),var(--charge));width:0%;transition:width 1.2s cubic-bezier(.2,.8,.2,1);box-shadow:0 0 8px 1px rgba(255,178,56,0.5);}
+  .therm-amt{font-family:var(--mono);font-size:10.5px;color:var(--charge);white-space:nowrap;}
+  .top-hud-level{font-family:var(--mono);font-size:11px;color:var(--paper-line);white-space:nowrap;}
+
+  /* ---------- back link ---------- */
+  .back-link{
+    position:fixed;left:calc(18px + env(safe-area-inset-left));bottom:calc(22px + env(safe-area-inset-bottom));z-index:85;
+    font-family:var(--mono);font-size:11.5px;color:var(--paper-line);opacity:0;pointer-events:none;
+    transition:opacity .3s ease;background:none;border:none;padding:8px;
+  }
+  .back-link.show{opacity:.55;pointer-events:auto;}
+  .back-link:hover{opacity:1;}
+
+  /* ---------- keep going reactor button ---------- */
+  .keep-going{
+    position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translateX(-50%);
+    z-index:90;width:104px;height:104px;border-radius:50%;
+    background:radial-gradient(circle at 38% 32%, #2a1e0e, #0e0c09 72%);
+    border:none;color:var(--charge);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.02em;text-align:center;
+    transition:transform .18s ease;
+    animation:pulseGlow 2.6s ease-in-out infinite;
+  }
+  .keep-going.hidden{display:none;}
+  .keep-going:hover{transform:translateX(-50%) scale(1.06);}
+  .keep-going:active{transform:translateX(-50%) scale(.97);}
+  .keep-going::before{
+    content:'';position:absolute;inset:-5px;border-radius:50%;padding:5px;
+    background:conic-gradient(from 0deg, transparent 0deg, var(--charge) 70deg, transparent 150deg, var(--charge) 230deg, transparent 320deg, var(--charge) 360deg);
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor; mask-composite:exclude;
+    animation:spin 3s linear infinite;
+    filter:drop-shadow(0 0 6px rgba(255,178,56,.6));
+  }
+  .keep-going.zap::after{
+    content:'';position:absolute;inset:0;border-radius:50%;background:var(--charge);opacity:.55;
+    animation:zapFlash .28s ease-out;
+  }
+  @keyframes zapFlash{from{opacity:.7;transform:scale(1);}to{opacity:0;transform:scale(1.5);}}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @keyframes pulseGlow{0%,100%{box-shadow:0 0 16px 1px rgba(255,178,56,.25);}50%{box-shadow:0 0 28px 7px rgba(255,178,56,.45);}}
+  .keep-going svg{width:16px;height:16px;fill:var(--charge);margin-bottom:1px;}
+  .keep-going b{font-family:var(--serif);font-weight:600;font-size:12.5px;line-height:1.1;max-width:78px;}
+
+  /* ---------- game viewport / single-stage scenes ---------- */
+  .game-viewport{position:fixed;inset:0;overflow:hidden;z-index:5;}
+  .scene{
+    position:absolute;inset:0;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:clamp(56px,11vh,92px) clamp(18px,5vw,40px) clamp(84px,13vh,110px);
+    opacity:0;pointer-events:none;
+    transform:scale(1.05);filter:blur(16px);
+    transition:opacity .55s ease, transform .65s cubic-bezier(.22,.9,.32,1), filter .55s ease;
+  }
+  .scene.current{opacity:1;transform:scale(1);filter:blur(0);pointer-events:auto;}
+  .scene.dark{background:rgba(var(--ink),0.88);}
+  .scene.paper{background:rgba(var(--parchment),0.94);color:var(--ink-text);}
+  .scene-inner{max-width:640px;width:100%;margin:0 auto;max-height:100%;overflow:hidden;}
+  .eyebrow-line{font-family:var(--mono);font-size:clamp(10px,1.6vh,12px);color:var(--charge);margin-bottom:clamp(8px,1.6vh,16px);display:inline-block;}
+  .scene.paper .eyebrow-line{color:var(--cardinal);}
+  .word-fly{display:inline-block;will-change:transform,opacity;}
+
+  /* ---------- gate ---------- */
+  #scene-gate{background:radial-gradient(circle at 50% 30%,rgba(27,32,39,.9),rgba(20,23,26,.92) 70%);}
+  .gate-content{position:relative;z-index:2;text-align:center;max-width:520px;}
+  .gate-content h1{font-size:clamp(24px,5.4vh,40px);line-height:1.15;}
+  .gate-content .sub{font-family:var(--serif);font-style:italic;font-weight:400;color:var(--charge);font-size:clamp(15px,3vh,20px);margin-top:clamp(10px,2vh,16px);}
+  .hand-row{display:flex;gap:clamp(6px,1.6vw,10px);justify-content:center;margin-top:clamp(24px,4.5vh,40px);flex-wrap:wrap;}
+  .hand-btn{width:clamp(44px,8vh,56px);height:clamp(44px,8vh,56px);border-radius:50%;border:1.5px solid var(--brass);background:transparent;color:var(--cream-text);font-family:var(--mono);font-size:clamp(14px,2.4vh,18px);display:flex;align-items:center;justify-content:center;transition:all .25s ease;}
+  .hand-btn:hover,.hand-btn:focus-visible{border-color:var(--charge);color:var(--charge);transform:translateY(-3px) scale(1.05);box-shadow:0 6px 18px -4px rgba(255,178,56,.4);}
+  .hand-btn.picked{background:var(--charge);color:#1a1300;border-color:var(--charge);}
+  .gate-hint{margin-top:clamp(12px,2.4vh,20px);font-size:clamp(11px,1.8vh,13px);color:var(--paper-line);font-family:var(--mono);}
+
+  /* ---------- video ---------- */
+  h2.scene-title{font-size:clamp(19px,3.8vh,30px);}
+  .video-frame{position:relative;width:100%;max-height:38vh;aspect-ratio:16/9;margin:clamp(16px,3vh,26px) auto 0;border:1px solid var(--brass);border-radius:2px;background:radial-gradient(circle at 30% 20%,#2a2018,transparent 60%),linear-gradient(135deg,#20242a,#14171a 60%);display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  .video-frame .initials-wm{position:absolute;font-family:var(--serif);font-weight:700;font-size:min(28vw,26vh);color:rgba(255,178,56,0.06);user-select:none;}
+  .play-btn{width:clamp(52px,9vh,72px);height:clamp(52px,9vh,72px);border-radius:50%;border:1.5px solid var(--charge);background:rgba(255,178,56,0.08);display:flex;align-items:center;justify-content:center;position:relative;z-index:2;transition:transform .2s ease;}
+  .play-btn:hover{transform:scale(1.06);}
+  .play-btn svg{fill:var(--charge);margin-left:4px;}
+  .video-caption{margin-top:clamp(8px,1.6vh,14px);font-family:var(--mono);font-size:clamp(10.5px,1.7vh,13px);color:var(--paper-line);text-align:center;}
+  .wave{display:flex;gap:3px;align-items:flex-end;height:18px;position:absolute;bottom:12px;left:12px;z-index:2;opacity:0;transition:opacity .3s ease;}
+  .wave.on{opacity:1;}
+  .wave span{width:3px;background:var(--charge);animation:bar 1s ease-in-out infinite;}
+  .wave span:nth-child(2){animation-delay:.15s;}
+  .wave span:nth-child(3){animation-delay:.3s;}
+  .wave span:nth-child(4){animation-delay:.45s;}
+  @keyframes bar{0%,100%{height:4px;}50%{height:16px;}}
+
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:clamp(10px,1.8vh,14px) clamp(18px,3vw,26px);border-radius:2px;border:1px solid var(--charge);background:transparent;color:var(--charge);font-size:clamp(12px,1.9vh,14px);letter-spacing:0.01em;transition:all .2s ease;}
+  .btn:hover{background:var(--charge);color:#1a1300;}
+  .btn.solid{background:var(--charge);color:#1a1300;}
+  .btn.solid:hover{background:#ffc561;}
+  .btn.cardinal{border-color:var(--cardinal);color:var(--cardinal);}
+  .btn.cardinal:hover{background:var(--cardinal);color:#fff;}
+
+  /* ---------- appeal ---------- */
+  .personalized{font-family:var(--mono);font-size:clamp(11px,1.8vh,13px);color:var(--cardinal);margin-bottom:clamp(6px,1.2vh,8px);}
+  .appeal-copy p{margin-top:clamp(12px,2.4vh,20px);font-size:clamp(13.5px,2.1vh,16px);color:#3a3226;}
+
+  /* ---------- archive photos ---------- */
+  .photo-row{display:flex;gap:clamp(10px,2vw,18px);justify-content:center;margin-top:clamp(20px,4vh,36px);flex-wrap:wrap;}
+  .polaroid{background:#fbf8ef;padding:6px 6px 16px;box-shadow:0 8px 18px -8px rgba(0,0,0,.35);width:clamp(88px,20vh,130px);}
+  .polaroid:nth-child(1){transform:rotate(-3deg);}
+  .polaroid:nth-child(2){transform:rotate(2deg);}
+  .polaroid:nth-child(3){transform:rotate(-1.5deg);}
+  .photo-surface{aspect-ratio:4/5;position:relative;overflow:hidden;background:repeating-conic-gradient(from 0deg, rgba(0,0,0,0.05) 0deg 3deg, transparent 3deg 6deg),radial-gradient(circle at 30% 25%, #d8c49a, #8a6a45 55%, #4c3a26 100%);filter:sepia(.15);}
+  .photo-caption{font-family:var(--serif);font-style:italic;font-size:clamp(10px,1.6vh,12.5px);color:#5a4c34;text-align:center;margin-top:6px;}
+  .archive-note{font-family:var(--mono);font-size:clamp(9.5px,1.5vh,11px);color:#7a6f57;margin-top:clamp(14px,2.6vh,20px);text-align:center;}
+
+  /* ---------- alumni ---------- */
+  .alumni-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(8px,1.6vh,16px);margin-top:clamp(18px,3.4vh,30px);width:100%;}
+  .alumni-card{border:1px solid rgba(255,178,56,.16);padding:clamp(10px,2vh,18px);background:linear-gradient(180deg,rgba(28,33,38,.9),rgba(20,23,26,.9));display:flex;gap:10px;align-items:flex-start;}
+  .monogram{flex:none;width:clamp(34px,6.5vh,50px);height:clamp(34px,6.5vh,50px);border-radius:50%;border:1.5px solid var(--brass);background:radial-gradient(circle at 35% 30%,#3a3020,#1a1610);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-weight:600;font-size:clamp(12px,2vh,17px);color:var(--charge);}
+  .alumni-name{font-family:var(--serif);font-size:clamp(13px,2.1vh,17px);font-weight:600;line-height:1.15;}
+  .alumni-quote{font-style:italic;font-size:clamp(10px,1.6vh,12.5px);color:#c9c2b2;margin-top:6px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .video-tag{display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-family:var(--mono);font-size:9px;color:var(--charge);border:1px solid var(--charge-dim);padding:3px 6px;border-radius:2px;}
+  .tiny-dot{width:4px;height:4px;border-radius:50%;background:var(--charge);}
+
+  /* ---------- vision ---------- */
+  .house-wrap{display:flex;justify-content:center;margin:clamp(10px,2.4vh,20px) 0;}
+  .house-svg{width:min(220px,26vh);}
+  .house-svg .win{fill:#1a1f24;transition:fill 1.2s ease, filter 1.2s ease;}
+  .house-svg .win.lit{fill:var(--charge);filter:drop-shadow(0 0 6px rgba(255,178,56,.8));}
+  .house-svg .line{stroke:var(--brass);stroke-width:1.4;fill:none;}
+  .vision-copy{font-size:clamp(12.5px,2vh,15px);color:#b9b2a0;margin-top:clamp(8px,1.6vh,12px);}
+
+  /* ---------- posters ---------- */
+  .poster-row{display:flex;gap:clamp(10px,2vw,18px);flex-wrap:wrap;justify-content:center;margin-top:clamp(18px,3.6vh,32px);}
+  .poster{width:clamp(96px,16vh,140px);height:clamp(128px,21vh,186px);position:relative;padding:clamp(8px,1.6vh,14px) 10px;display:flex;flex-direction:column;justify-content:space-between;color:#1a1300;overflow:hidden;box-shadow:0 12px 24px -10px rgba(0,0,0,.5);}
+  .poster:nth-child(1){background:repeating-linear-gradient(45deg,var(--charge),var(--charge) 10px,#ffcf7a 10px,#ffcf7a 20px);transform:rotate(-4deg);}
+  .poster:nth-child(2){background:repeating-linear-gradient(-45deg,var(--cardinal),var(--cardinal) 10px,#c73b52 10px,#c73b52 20px);color:#fff;transform:rotate(3deg);}
+  .poster:nth-child(3){background:repeating-linear-gradient(45deg,var(--brass),var(--brass) 10px,#a3805a 10px,#a3805a 20px);transform:rotate(-2deg);}
+  .poster-tag{font-family:var(--mono);font-size:8px;letter-spacing:.04em;background:rgba(0,0,0,.65);color:#fff;padding:2px 5px;align-self:flex-start;}
+  .poster-title{font-family:var(--serif);font-weight:700;font-size:clamp(13px,2.4vh,18px);line-height:1.05;}
+  .poster-sub{font-family:var(--mono);font-size:8.5px;}
+
+  /* ---------- pledge ---------- */
+  .big-therm{margin:clamp(6px,1.4vh,10px) 0 clamp(16px,3vh,26px);width:100%;}
+  .big-therm-top{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono);}
+  .big-therm-raised{font-size:clamp(20px,4.4vh,32px);color:var(--charge);}
+  .big-therm-goal{font-size:clamp(10px,1.6vh,12.5px);color:var(--paper-line);}
+  .big-therm-track{height:clamp(9px,1.6vh,13px);background:#2a2f35;border-radius:7px;overflow:hidden;margin-top:8px;}
+  .big-therm-fill{height:100%;border-radius:7px;background:linear-gradient(90deg,var(--charge-dim),var(--charge));width:0%;transition:width 1s cubic-bezier(.2,.8,.2,1);}
+  .big-therm-note{font-family:var(--mono);font-size:clamp(8.5px,1.3vh,10px);color:#68625a;margin-top:6px;}
+  .pledge-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:clamp(10px,2vh,16px);}
+  .pledge-opt{padding:clamp(8px,1.8vh,13px) 6px;border:1px solid var(--brass);background:transparent;color:var(--cream-text);font-family:var(--mono);font-size:clamp(11px,1.8vh,14px);text-align:center;transition:all .2s ease;}
+  .pledge-opt:hover,.pledge-opt.active{border-color:var(--charge);background:rgba(255,178,56,.1);color:var(--charge);}
+  .custom-row{display:flex;gap:8px;margin-top:10px;}
+  .custom-row input{flex:1;background:transparent;border:1px solid var(--brass);color:var(--cream-text);font-family:var(--mono);padding:clamp(8px,1.6vh,12px);border-radius:2px;font-size:clamp(11px,1.8vh,13px);min-width:0;}
+  .custom-row input:focus-visible{outline:2px solid var(--charge);outline-offset:2px;}
+  .pledge-cta{margin-top:clamp(12px,2.2vh,20px);width:100%;justify-content:center;font-size:clamp(13px,2vh,15px);padding:clamp(11px,2vh,16px);}
+  .pledge-confirm{margin-top:10px;font-family:var(--mono);font-size:clamp(10px,1.6vh,12px);color:var(--charge);min-height:14px;}
+
+  /* ---------- form ---------- */
+  .form-grid{display:flex;flex-direction:column;gap:clamp(8px,1.6vh,13px);margin-top:clamp(14px,2.6vh,22px);width:100%;}
+  .form-row{display:flex;gap:10px;}
+  .form-row > div{flex:1;min-width:0;}
+  .form-grid label{font-family:var(--mono);font-size:clamp(9.5px,1.5vh,11px);color:var(--paper-line);display:block;margin-bottom:4px;}
+  .form-grid input[type=text],.form-grid input[type=email],.form-grid textarea{width:100%;background:transparent;border:1px solid var(--brass);color:var(--cream-text);font-family:var(--sans);padding:clamp(7px,1.4vh,11px);border-radius:2px;font-size:clamp(12px,1.9vh,14px);resize:none;}
+  .form-grid input:focus-visible,.form-grid textarea:focus-visible{outline:2px solid var(--charge);outline-offset:2px;}
+  .file-drop{border:1.5px dashed var(--brass);padding:clamp(10px,1.8vh,16px);text-align:center;border-radius:2px;font-family:var(--mono);font-size:clamp(10px,1.6vh,12px);color:var(--paper-line);position:relative;}
+  .file-drop input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+  .file-drop.has-file{border-color:var(--charge);color:var(--charge);}
+  .submit-confirm{font-family:var(--mono);font-size:clamp(10px,1.6vh,12px);color:var(--charge);min-height:14px;margin-top:2px;}
+  .form-title{font-size:clamp(17px,3vh,22px);}
+  .form-sub{color:#b9b2a0;margin-top:6px;font-size:clamp(11.5px,1.8vh,13.5px);}
+
+  @media(prefers-reduced-motion: reduce){
+    .scene{transition:opacity .2s ease;}
+    .keep-going, .keep-going::before{animation:none;}
+    *{transition-duration:.001ms !important;animation-duration:.001ms !important;}
+  }
+</style>
+</head>
+<body>
+
+  <canvas id="bgCanvas" aria-hidden="true"></canvas>
+
+  <div class="top-hud">
+    <span class="top-hud-brand"><span class="dot"></span>TDC — Est. 1965</span>
+    <div class="top-hud-therm" id="thermHud">
+      <div class="therm-track"><div class="therm-fill" id="thermFillSmall"></div></div>
+      <span class="therm-amt" id="thermAmtSmall">$0 / $5.0M</span>
+    </div>
+    <span class="top-hud-level" id="levelLabel">01 / 09</span>
+  </div>
+
+  <div class="game-viewport" id="gameViewport">
+
+    <!-- 0 : GATE -->
+    <section class="scene current" id="scene-gate">
+      <div class="gate-content">
+        <span class="eyebrow-line">Before we start</span>
+        <h1>Count your five closest friends on one hand.</h1>
+        <p class="sub">How many of them are from TDC?</p>
+        <div class="hand-row" role="group" aria-label="Choose a number from zero to five">
+          <button class="hand-btn" data-n="0">0</button>
+          <button class="hand-btn" data-n="1">1</button>
+          <button class="hand-btn" data-n="2">2</button>
+          <button class="hand-btn" data-n="3">3</button>
+          <button class="hand-btn" data-n="4">4</button>
+          <button class="hand-btn" data-n="5">5</button>
+        </div>
+        <p class="gate-hint">Tap a number to continue</p>
+      </div>
+    </section>
+
+    <!-- 1 : VIDEO -->
+    <section class="scene dark" id="scene-video">
+      <div class="scene-inner">
+        <span class="eyebrow-line">A message from an alum</span>
+        <h2 class="scene-title">Dave Blundin, on why he's showing up now.</h2>
+        <div class="video-frame" id="videoFrame">
+          <span class="initials-wm">DB</span>
+          <button class="play-btn" id="playBtn" aria-label="Play placeholder video">
+            <svg width="20" height="20" viewBox="0 0 24 24"><path d="M6 4l14 8-14 8V4z"/></svg>
+          </button>
+          <div class="wave" id="wave"><span></span><span></span><span></span><span></span></div>
+        </div>
+        <p class="video-caption">Placeholder — final footage from Dave Blundin goes here.</p>
+      </div>
+    </section>
+
+    <!-- 2 : APPEAL -->
+    <section class="scene paper" id="scene-appeal">
+      <div class="scene-inner">
+        <p class="personalized" id="personalizedLine"></p>
+        <span class="eyebrow-line">The appeal</span>
+        <h2 class="scene-title" style="font-size:clamp(24px,5vh,40px);">Re-charge The Charge.</h2>
+        <div class="appeal-copy">
+          <p>Sixty years ago, a handful of MIT students built something that outlasted the furniture, the rules, and every assumption about what a house could be: brothers who invest in each other's success for life. The Charge has been through hard years — re-charging it rebuilds the house and the endowment behind it, so that network stays lit for whoever joins next.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 : ARCHIVE -->
+    <section class="scene dark" id="scene-archive">
+      <div class="scene-inner" style="text-align:center;">
+        <span class="eyebrow-line">The archive</span>
+        <h2 class="scene-title">Sixty years of it.</h2>
+        <div class="photo-row">
+          <div class="polaroid"><div class="photo-surface"></div><p class="photo-caption">Founders, 1965</p></div>
+          <div class="polaroid"><div class="photo-surface"></div><p class="photo-caption">Spring Weekend, 1991</p></div>
+          <div class="polaroid"><div class="photo-surface"></div><p class="photo-caption">Reunion, 2004</p></div>
+        </div>
+        <p class="archive-note">Placeholder photos — real archive images go here.</p>
+      </div>
+    </section>
+
+    <!-- 4 : ALUMNI -->
+    <section class="scene dark" id="scene-alumni">
+      <div class="scene-inner" style="text-align:center;">
+        <span class="eyebrow-line">The circuit</span>
+        <h2 class="scene-title">Some of the charge that came before.</h2>
+        <div class="alumni-grid">
+          <div class="alumni-card">
+            <div class="monogram">NR</div>
+            <div>
+              <div class="alumni-name">Neil Robertson</div>
+              <p class="alumni-quote">"[Placeholder — fondest TDC memory, in his own words.]"</p>
+              <span class="video-tag"><span class="tiny-dot"></span>Video coming soon</span>
+            </div>
+          </div>
+          <div class="alumni-card">
+            <div class="monogram">DB</div>
+            <div>
+              <div class="alumni-name">Dave Blundin</div>
+              <p class="alumni-quote">"[Placeholder — fondest TDC memory, in his own words.]"</p>
+              <span class="video-tag"><span class="tiny-dot"></span>Video coming soon</span>
+            </div>
+          </div>
+          <div class="alumni-card">
+            <div class="monogram">MS</div>
+            <div>
+              <div class="alumni-name">Michael Saylor</div>
+              <p class="alumni-quote">"[Placeholder — fondest TDC memory, in his own words.]"</p>
+              <span class="video-tag"><span class="tiny-dot"></span>Video coming soon</span>
+            </div>
+          </div>
+          <div class="alumni-card">
+            <div class="monogram">SB</div>
+            <div>
+              <div class="alumni-name">Sid Banerjee</div>
+              <p class="alumni-quote">"[Placeholder — fondest TDC memory, in his own words.]"</p>
+              <span class="video-tag"><span class="tiny-dot"></span>Video coming soon</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 : VISION -->
+    <section class="scene dark" id="scene-vision">
+      <div class="scene-inner" style="text-align:center;">
+        <span class="eyebrow-line">The vision</span>
+        <h2 class="scene-title">A Founder House for the next MIT founder.</h2>
+        <div class="house-wrap">
+          <svg class="house-svg" id="houseSvg" viewBox="0 0 300 240">
+            <polygon class="line" points="20,120 150,30 280,120"/>
+            <rect class="line" x="40" y="120" width="220" height="100"/>
+            <rect class="win win-1" x="65" y="145" width="30" height="30"/>
+            <rect class="win win-2" x="115" y="145" width="30" height="30"/>
+            <rect class="win win-3" x="165" y="145" width="30" height="30"/>
+            <rect class="win win-4" x="215" y="145" width="30" height="30"/>
+            <rect class="line" x="140" y="175" width="40" height="45"/>
+          </svg>
+        </div>
+        <p class="vision-copy">The endowment restarts the house and funds a standing alumni mentoring network — making TDC the reason a prospective student picks this house over anywhere else on campus.</p>
+      </div>
+    </section>
+
+    <!-- 6 : SOCIAL -->
+    <section class="scene dark" id="scene-social">
+      <div class="scene-inner" style="text-align:center;">
+        <span class="eyebrow-line">Also, it's still a house</span>
+        <h2 class="scene-title">Brotherhood, and a good time.</h2>
+        <div class="poster-row">
+          <div class="poster"><span class="poster-tag">Placeholder</span><div><div class="poster-title">Spring Weekend</div><div class="poster-sub">TDC · Est. 1965</div></div></div>
+          <div class="poster"><span class="poster-tag">Placeholder</span><div><div class="poster-title">Charge Formal</div><div class="poster-sub">Black tie, brass rules</div></div></div>
+          <div class="poster"><span class="poster-tag">Placeholder</span><div><div class="poster-title">Founders' Day</div><div class="poster-sub">60 years running</div></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7 : PLEDGE -->
+    <section class="scene dark" id="scene-pledge">
+      <div class="scene-inner">
+        <span class="eyebrow-line">Recharge the line</span>
+        <h2 class="scene-title">Put your name back on the circuit.</h2>
+        <div class="big-therm">
+          <div class="big-therm-top">
+            <span class="big-therm-raised" id="bigThermRaised">$0</span>
+            <span class="big-therm-goal">of $5,000,000 goal</span>
+          </div>
+          <div class="big-therm-track"><div class="big-therm-fill" id="bigThermFill"></div></div>
+          <p class="big-therm-note">Sample data for preview — connect to live totals before launch.</p>
+        </div>
+        <div class="pledge-grid" role="group" aria-label="Choose a pledge amount">
+          <button class="pledge-opt" data-amt="100">$100</button>
+          <button class="pledge-opt" data-amt="500">$500</button>
+          <button class="pledge-opt" data-amt="1000">$1,000</button>
+          <button class="pledge-opt" data-amt="5000">$5,000</button>
+        </div>
+        <div class="custom-row">
+          <input type="text" inputmode="numeric" id="customAmt" placeholder="Custom amount">
+          <button class="btn" id="customAmtBtn">Use</button>
+        </div>
+        <button class="btn solid pledge-cta" id="pledgeBtn">Pledge $0</button>
+        <p class="pledge-confirm" id="pledgeConfirm"></p>
+      </div>
+    </section>
+
+    <!-- 8 : FORM -->
+    <section class="scene dark" id="scene-form">
+      <div class="scene-inner">
+        <span class="eyebrow-line">One more thing</span>
+        <h2 class="form-title">Add your story to the wall.</h2>
+        <p class="form-sub">Fill in your profile and drop a memento — a photo, a video, or an update on what you're up to.</p>
+        <form class="form-grid" id="memoryForm">
+          <div class="form-row">
+            <div>
+              <label for="fName">Name</label>
+              <input type="text" id="fName" required>
+            </div>
+            <div style="flex:0 0 90px;">
+              <label for="fYear">Class year</label>
+              <input type="text" id="fYear">
+            </div>
+          </div>
+          <div>
+            <label for="fEmail">Email</label>
+            <input type="email" id="fEmail" required>
+          </div>
+          <div>
+            <label for="fMemory">Favorite TDC memory or update</label>
+            <textarea id="fMemory" rows="2"></textarea>
+          </div>
+          <div>
+            <label for="fFile">Upload a memento</label>
+            <div class="file-drop" id="fileDrop">
+              <span id="fileDropText">Tap to choose a file</span>
+              <input type="file" id="fFile">
+            </div>
+          </div>
+          <button type="submit" class="btn cardinal" style="justify-content:center;">Save my story</button>
+          <p class="submit-confirm" id="submitConfirm"></p>
+        </form>
+      </div>
+    </section>
+
+  </div>
+
+  <canvas id="fxCanvas" aria-hidden="true"></canvas>
+
+  <button class="back-link" id="backLink">‹ back</button>
+  <button class="keep-going hidden" id="keepGoing">
+    <svg viewBox="0 0 24 24"><path d="M13 2 3 14h6l-1 8 11-13h-7l1-7z"/></svg>
+    <b id="keepGoingLabel">Keep Going</b>
+  </button>
+
+<script>
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ============ PARTICLE SYSTEM ============ */
+  const bgCanvas = document.getElementById('bgCanvas');
+  const fxCanvas = document.getElementById('fxCanvas');
+  const bgCtx = bgCanvas.getContext('2d');
+  const fxCtx = fxCanvas.getContext('2d');
+
+  function fitCanvas(canvas){
+    const dpr = Math.min(window.devicePixelRatio||1, 2);
+    canvas.width = innerWidth*dpr;
+    canvas.height = innerHeight*dpr;
+    canvas.getContext('2d').setTransform(dpr,0,0,dpr,0,0);
+  }
+  function fitAll(){ fitCanvas(bgCanvas); fitCanvas(fxCanvas); }
+  fitAll();
+  window.addEventListener('resize', fitAll);
+
+  const ambient = [];
+  const AMBIENT_N = reducedMotion ? 0 : Math.round((innerWidth*innerHeight)/26000);
+  for(let i=0;i<AMBIENT_N;i++){
+    ambient.push({
+      x: Math.random()*innerWidth, y: Math.random()*innerHeight,
+      vx: (Math.random()*2-1)*0.18, vy: (Math.random()*2-1)*0.18,
+      r: Math.random()*1.6+0.6, a: Math.random()*0.35+0.15
+    });
+  }
+
+  let bursts = [];
+  function spawnBurst(x, y, opts){
+    if(reducedMotion) return;
+    opts = opts||{};
+    const count = opts.count||14;
+    for(let i=0;i<count;i++){
+      const angle = opts.upward ? (Math.PI*1.5 + (Math.random()*1.6-0.8)) : Math.random()*Math.PI*2;
+      const speed = (Math.random()*2.6+1)*(opts.speedMul||1);
+      bursts.push({
+        x, y,
+        vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed,
+        r: Math.random()*2.4+1.2,
+        life: 1, decay: Math.random()*0.018+0.014,
+        color: opts.color || '255,178,56'
+      });
+    }
+  }
+
+  function tick(){
+    // ambient layer
+    bgCtx.clearRect(0,0,innerWidth,innerHeight);
+    for(let i=0;i<ambient.length;i++){
+      const p = ambient[i];
+      p.x += p.vx; p.y += p.vy;
+      if(p.x<0) p.x=innerWidth; if(p.x>innerWidth) p.x=0;
+      if(p.y<0) p.y=innerHeight; if(p.y>innerHeight) p.y=0;
+      bgCtx.beginPath();
+      bgCtx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      bgCtx.fillStyle = `rgba(255,178,56,${p.a})`;
+      bgCtx.fill();
+      for(let j=i+1;j<ambient.length;j++){
+        const q = ambient[j];
+        const dx=p.x-q.x, dy=p.y-q.y, d=Math.sqrt(dx*dx+dy*dy);
+        if(d<110){
+          bgCtx.strokeStyle = `rgba(255,178,56,${0.09*(1-d/110)})`;
+          bgCtx.lineWidth = 1;
+          bgCtx.beginPath(); bgCtx.moveTo(p.x,p.y); bgCtx.lineTo(q.x,q.y); bgCtx.stroke();
+        }
+      }
+    }
+    // burst layer
+    fxCtx.clearRect(0,0,innerWidth,innerHeight);
+    bursts = bursts.filter(b=>b.life>0);
+    bursts.forEach(b=>{
+      b.x += b.vx; b.y += b.vy; b.vy += 0.025; b.life -= b.decay;
+      fxCtx.beginPath();
+      fxCtx.arc(b.x,b.y,Math.max(b.r*b.life,0),0,Math.PI*2);
+      fxCtx.fillStyle = `rgba(${b.color},${Math.max(b.life,0)})`;
+      fxCtx.shadowColor = `rgba(${b.color},0.8)`;
+      fxCtx.shadowBlur = 6;
+      fxCtx.fill();
+    });
+    fxCtx.shadowBlur = 0;
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  /* ============ HEADLINE ASSEMBLE EFFECT ============ */
+  function wrapWords(el){
+    if(el.dataset.wrapped) return;
+    const text = el.textContent;
+    const parts = text.split(/(\s+)/);
+    el.innerHTML = '';
+    parts.forEach(p=>{
+      if(/^\s+$/.test(p)){
+        el.appendChild(document.createTextNode(p));
+      } else if(p.length){
+        const span = document.createElement('span');
+        span.className = 'word-fly';
+        span.textContent = p;
+        el.appendChild(span);
+      }
+    });
+    el.dataset.wrapped = '1';
+  }
+
+  function playHeadlineFX(scene){
+    const heading = scene.querySelector('h1, h2');
+    if(!heading) return;
+    wrapWords(heading);
+    const words = [...heading.querySelectorAll('.word-fly')];
+    if(reducedMotion){
+      words.forEach(w=>{ w.style.transform='none'; w.style.opacity='1'; });
+      return;
+    }
+    const rects = words.map(w=>w.getBoundingClientRect());
+    words.forEach(w=>{
+      const rx = (Math.random()*2-1)*260;
+      const ry = (Math.random()*2-1)*150;
+      const rrot = (Math.random()*2-1)*45;
+      w.style.transition = 'none';
+      w.style.transform = `translate(${rx}px, ${ry}px) rotate(${rrot}deg) scale(.35)`;
+      w.style.opacity = '0';
+    });
+    heading.offsetHeight; // force reflow
+    words.forEach((w,i)=>{
+      const delay = i*70;
+      w.style.transition = `transform .6s cubic-bezier(.22,.85,.25,1.35) ${delay}ms, opacity .4s ease ${delay}ms`;
+      w.style.transform = 'translate(0,0) rotate(0) scale(1)';
+      w.style.opacity = '1';
+      setTimeout(()=>{
+        const r = rects[i];
+        spawnBurst(r.left+r.width/2, r.top+r.height/2, {count:9});
+      }, delay+560);
+    });
+  }
+
+  /* ============ SCENE NAVIGATION ============ */
+  const sceneIds = ['scene-gate','scene-video','scene-appeal','scene-archive','scene-alumni','scene-vision','scene-social','scene-pledge','scene-form'];
+  const scenes = sceneIds.map(id=>document.getElementById(id));
+  let current = 0;
+
+  const ctaLabels = ['', 'Keep Going', 'See the archive', 'Meet who came before', "See what we're building", 'Keep Going', 'Recharge the line', 'Add your story', ''];
+  const levelLabel = document.getElementById('levelLabel');
+  const thermHud = document.getElementById('thermHud');
+  const backLink = document.getElementById('backLink');
+  const keepGoing = document.getElementById('keepGoing');
+  const keepGoingLabel = document.getElementById('keepGoingLabel');
+
+  function pad(n){ return n<10 ? '0'+n : ''+n; }
+
+  function updateKeepGoing(){
+    if(current === 0){ keepGoing.classList.add('hidden'); return; }
+    keepGoing.classList.remove('hidden');
+    if(current === scenes.length-1){
+      keepGoingLabel.textContent = 'Play It Again';
+      keepGoing.dataset.mode = 'restart';
+    } else {
+      keepGoingLabel.textContent = ctaLabels[current];
+      keepGoing.dataset.mode = 'next';
+    }
+  }
+
+  function render(){
+    scenes.forEach((s,i)=> s.classList.toggle('current', i===current));
+    levelLabel.textContent = pad(current+1) + ' / ' + pad(scenes.length);
+    backLink.classList.toggle('show', current>0);
+    updateKeepGoing();
+    if(current >= 2) thermHud.classList.add('show');
+    if(current === 5 && !houseLit) lightHouse();
+    playHeadlineFX(scenes[current]);
+  }
+
+  function goTo(i){
+    if(i<0 || i>=scenes.length) return;
+    current = i;
+    render();
+  }
+  function next(){ goTo(current+1); }
+  function prev(){ goTo(current-1); }
+  function restart(){
+    document.querySelectorAll('.hand-btn').forEach(b=>b.classList.remove('picked'));
+    document.getElementById('personalizedLine').textContent = '';
+    goTo(0);
+  }
+
+  backLink.addEventListener('click', prev);
+
+  keepGoing.addEventListener('click', ()=>{
+    const rect = keepGoing.getBoundingClientRect();
+    spawnBurst(rect.left+rect.width/2, rect.top+rect.height/2, {count:24, speedMul:1.7, upward:true});
+    keepGoing.classList.add('zap');
+    setTimeout(()=>keepGoing.classList.remove('zap'), 280);
+    if(keepGoing.dataset.mode === 'restart'){ restart(); } else { next(); }
+  });
+
+  document.addEventListener('keydown', (e)=>{
+    const tag = (document.activeElement && document.activeElement.tagName || '').toLowerCase();
+    if(tag === 'input' || tag === 'textarea') return;
+    if(e.key === 'ArrowRight') next();
+    if(e.key === 'ArrowLeft') prev();
+  });
+
+  let touchStartX = null;
+  document.getElementById('gameViewport').addEventListener('touchstart', (e)=>{
+    const t = e.target.closest('input,textarea,button,select,a');
+    touchStartX = t ? null : e.touches[0].clientX;
+  }, {passive:true});
+  document.getElementById('gameViewport').addEventListener('touchend', (e)=>{
+    if(touchStartX === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if(Math.abs(dx) > 50){ dx < 0 ? next() : prev(); }
+    touchStartX = null;
+  }, {passive:true});
+
+  /* ============ GATE ============ */
+  document.querySelectorAll('.hand-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.hand-btn').forEach(b=>b.classList.remove('picked'));
+      btn.classList.add('picked');
+      const r = btn.getBoundingClientRect();
+      spawnBurst(r.left+r.width/2, r.top+r.height/2, {count:16});
+      const n = btn.dataset.n;
+      const line = document.getElementById('personalizedLine');
+      if(n === '0'){ line.textContent = "You said zero out of five. Let's fix that."; }
+      else if(n === '5'){ line.textContent = "You said five out of five. That's the whole network — worth protecting."; }
+      else { line.textContent = `You said ${n} out of 5. That's a family worth investing in.`; }
+      setTimeout(next, 450);
+    });
+  });
+
+  /* ============ VIDEO ============ */
+  const playBtn = document.getElementById('playBtn');
+  const wave = document.getElementById('wave');
+  let playing = false;
+  playBtn.addEventListener('click', ()=>{
+    playing = !playing;
+    wave.classList.toggle('on', playing);
+    playBtn.style.opacity = playing ? '0.35' : '1';
+  });
+
+  /* ============ THERMOMETER ============ */
+  const GOAL = 5000000;
+  let raised = 1840000;
+  const smallFill = document.getElementById('thermFillSmall');
+  const smallAmt = document.getElementById('thermAmtSmall');
+  const bigFill = document.getElementById('bigThermFill');
+  const bigRaised = document.getElementById('bigThermRaised');
+  function fmt(n){ return '$' + Math.round(n).toLocaleString('en-US'); }
+  function renderTherm(){
+    const pct = Math.min(100, (raised/GOAL)*100);
+    smallFill.style.width = pct + '%';
+    bigFill.style.width = pct + '%';
+    smallAmt.textContent = fmt(raised) + ' / $5.0M';
+    bigRaised.textContent = fmt(raised);
+  }
+  renderTherm();
+
+  /* ============ HOUSE LIGHTING ============ */
+  let houseLit = false;
+  function lightHouse(){
+    houseLit = true;
+    const wins = document.querySelectorAll('#houseSvg .win');
+    wins.forEach((w,i)=> setTimeout(()=>{
+      w.classList.add('lit');
+      const r = w.getBoundingClientRect();
+      spawnBurst(r.left+r.width/2, r.top+r.height/2, {count:6});
+    }, i*220));
+  }
+
+  /* ============ PLEDGE ============ */
+  let pledgeAmt = 0;
+  const pledgeBtn = document.getElementById('pledgeBtn');
+  document.querySelectorAll('.pledge-opt').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.pledge-opt').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      pledgeAmt = parseInt(btn.dataset.amt,10);
+      pledgeBtn.textContent = `Pledge ${fmt(pledgeAmt)}`;
+    });
+  });
+  document.getElementById('customAmtBtn').addEventListener('click', ()=>{
+    const val = parseInt(document.getElementById('customAmt').value.replace(/[^0-9]/g,''),10);
+    if(!isNaN(val) && val > 0){
+      document.querySelectorAll('.pledge-opt').forEach(b=>b.classList.remove('active'));
+      pledgeAmt = val;
+      pledgeBtn.textContent = `Pledge ${fmt(pledgeAmt)}`;
+    }
+  });
+  pledgeBtn.addEventListener('click', ()=>{
+    if(pledgeAmt <= 0){
+      document.getElementById('pledgeConfirm').textContent = 'Choose or enter an amount first.';
+      return;
+    }
+    raised += pledgeAmt;
+    renderTherm();
+    const r = pledgeBtn.getBoundingClientRect();
+    spawnBurst(r.left+r.width/2, r.top, {count:20, upward:true, speedMul:1.4});
+    document.getElementById('pledgeConfirm').textContent =
+      `Thanks — this is a demo, so nothing was charged. In production this recharges the meter by ${fmt(pledgeAmt)}.`;
+  });
+
+  /* ============ MEMENTO FORM ============ */
+  const fileDrop = document.getElementById('fileDrop');
+  const fileInput = document.getElementById('fFile');
+  const fileDropText = document.getElementById('fileDropText');
+  fileInput.addEventListener('change', ()=>{
+    if(fileInput.files.length){
+      fileDrop.classList.add('has-file');
+      fileDropText.textContent = fileInput.files[0].name;
+    }
+  });
+  document.getElementById('memoryForm').addEventListener('submit', (e)=>{
+    e.preventDefault();
+    document.getElementById('submitConfirm').textContent =
+      "Thanks — added to the archive. (Demo only: wire this form to a backend to store submissions for real.)";
+    e.target.reset();
+    fileDrop.classList.remove('has-file');
+    fileDropText.textContent = 'Tap to choose a file';
+  });
+
+  /* ============ INIT ============ */
+  render();
+</script>
+</body>
+</html>
