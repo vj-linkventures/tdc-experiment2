@@ -87,7 +87,45 @@
   nav{margin-left:auto;display:flex;align-items:center;gap:clamp(12px,2.4vw,26px);}
   nav a.navlink{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--white-dim);}
   nav a.navlink:hover{color:var(--white);}
-  @media(max-width:700px){ .nav-hide{display:none;} }
+
+  /* ---------- mobile menu ---------- */
+  .burger{
+    display:none;width:40px;height:36px;padding:0;border:1px solid var(--line);border-radius:2px;
+    background:transparent;cursor:pointer;align-items:center;justify-content:center;
+    transition:border-color .2s ease;
+  }
+  .burger:hover{border-color:var(--blue);}
+  .burger-lines{display:block;position:relative;width:18px;height:12px;}
+  .burger-lines i{
+    position:absolute;left:0;width:100%;height:1.5px;border-radius:2px;background:var(--white);
+    transition:transform .24s ease, opacity .18s ease;
+  }
+  .burger-lines i:nth-child(1){top:0;}
+  .burger-lines i:nth-child(2){top:5.25px;}
+  .burger-lines i:nth-child(3){top:10.5px;}
+  .burger[aria-expanded="true"] .burger-lines i:nth-child(1){transform:translateY(5.25px) rotate(45deg);}
+  .burger[aria-expanded="true"] .burger-lines i:nth-child(2){opacity:0;}
+  .burger[aria-expanded="true"] .burger-lines i:nth-child(3){transform:translateY(-5.25px) rotate(-45deg);}
+
+  .mobile-menu{border-top:1px solid var(--line-soft);animation:menuDrop .22s ease;}
+  .mobile-menu[hidden]{display:none;}
+  @keyframes menuDrop{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:none;}}
+  .mobile-menu a{
+    display:block;padding:15px var(--gutter);border-bottom:1px solid var(--line-soft);
+    font-family:var(--mono);font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--white-dim);
+  }
+  .mobile-menu a:last-child{border-bottom:0;}
+  .mobile-menu a.cta{color:var(--blue-light);background:rgba(27,79,160,.16);}
+
+  @media(max-width:700px){
+    /* two classes, so this beats .btn's own display further down the sheet */
+    nav .nav-hide{display:none;}
+    .burger{display:inline-flex;}
+  }
+  @media(min-width:701px){
+    .mobile-menu{display:none;}
+  }
 
   .btn{
     display:inline-flex;align-items:center;justify-content:center;gap:8px;
@@ -152,6 +190,8 @@
   }
 
   /* ---------- sections ---------- */
+  /* the sticky header would otherwise sit on top of the heading we jumped to */
+  main > section[id]{scroll-margin-top:78px;}
   section.band{padding:clamp(52px,8vh,88px) 0;border-top:1px solid var(--line-soft);}
   section.band.alt{background:linear-gradient(180deg,var(--black-2),var(--black));}
   .band h2{font-size:clamp(25px,4.2vw,38px);margin-top:16px;}
@@ -310,8 +350,18 @@
       <a class="navlink nav-hide" href="#story">Story</a>
       <a class="navlink nav-hide" href="#updates">Updates</a>
       <a class="navlink nav-hide" href="#faq">FAQ</a>
-      <a class="btn" href="#interest">Get involved</a>
+      <a class="btn nav-hide" href="#interest">Get involved</a>
+      <button class="burger" id="burger" aria-label="Open menu"
+              aria-expanded="false" aria-controls="mobileMenu">
+        <span class="burger-lines" aria-hidden="true"><i></i><i></i><i></i></span>
+      </button>
     </nav>
+  </div>
+  <div class="mobile-menu" id="mobileMenu" hidden>
+    <a href="#story">Story</a>
+    <a href="#updates">Updates</a>
+    <a href="#faq">FAQ</a>
+    <a href="#interest" class="cta">Get involved</a>
   </div>
 </header>
 
@@ -605,6 +655,41 @@
   // 4. Upload limits for mentor materials.
   const MAX_FILES = 5;
   const MAX_UPLOAD_MB = 15;
+
+  /* ========================= MOBILE MENU ========================= */
+  (function(){
+    const burger = document.getElementById('burger');
+    const menu = document.getElementById('mobileMenu');
+
+    function setOpen(open){
+      menu.hidden = !open;
+      burger.setAttribute('aria-expanded', String(open));
+      burger.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    }
+
+    burger.addEventListener('click', function(e){
+      e.stopPropagation();
+      setOpen(menu.hidden);
+    });
+
+    // a tapped link scrolls to its section, so the menu should get out of the way
+    menu.addEventListener('click', function(e){
+      if(e.target.closest('a')) setOpen(false);
+    });
+
+    document.addEventListener('click', function(e){
+      if(!menu.hidden && !menu.contains(e.target) && e.target !== burger) setOpen(false);
+    });
+
+    document.addEventListener('keydown', function(e){
+      if(e.key === 'Escape' && !menu.hidden){ setOpen(false); burger.focus(); }
+    });
+
+    // leaving mobile width with the menu open would strand it open on desktop
+    window.matchMedia('(min-width:701px)').addEventListener('change', function(ev){
+      if(ev.matches) setOpen(false);
+    });
+  })();
 
   /* ========================= LETTER LINK ========================= */
   (function(){
