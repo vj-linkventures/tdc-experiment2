@@ -2,776 +2,709 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
-<title>Re-charge The Charge — TDC</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Re-charge the Charge — Theta Deuteron Charge, MIT</title>
+<meta name="description" content="Something is being rebuilt at the Theta Deuteron Charge of Theta Delta Chi. Watch the story, follow the updates, and tell us how you want to help.">
+<meta name="theme-color" content="#06080d">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Re-charge the Charge — Theta Deuteron Charge, MIT">
+<meta property="og:description" content="Something is being rebuilt at the Theta Deuteron Charge of Theta Delta Chi. Watch the story, follow the updates, and tell us how you want to help.">
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%2306080d'/%3E%3Cpath d='M12 12h40v26c0 8-8 12-20 18-12-6-20-10-20-18z' fill='none' stroke='%234c86d9' stroke-width='3'/%3E%3Ctext x='32' y='36' font-family='Georgia,serif' font-size='17' fill='%23f2f5fa' text-anchor='middle'%3E%CE%98%CE%94%CE%A7%3C/text%3E%3C/svg%3E">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
 <style>
   :root{
-    --ink:20,23,26;
-    --parchment:237,230,214;
-    --charge:#ffb238;
-    --charge-dim:#8a6420;
-    --cardinal:#a31f34;
-    --brass:#8c6a3f;
-    --paper-line:#c9bfa6;
-    --cream-text:#f4efe4;
-    --ink-text:#2a241a;
-    --serif:'Fraunces', serif;
-    --sans:'IBM Plex Sans', sans-serif;
-    --mono:'IBM Plex Mono', monospace;
+    /* Theta Delta Chi — black, white, blue */
+    --black:#06080d;
+    --black-2:#0b0f18;
+    --panel:#0e1422;
+    --line:#1e2a41;
+    --line-soft:#161f31;
+
+    --blue:#1b4fa0;        /* charge blue */
+    --blue-bright:#4c86d9; /* accent / interactive */
+    --blue-light:#9fc3f0;  /* eyebrows, small text */
+    --blue-glow:rgba(76,134,217,.35);
+
+    --white:#f2f5fa;
+    --white-dim:#b7c2d4;
+    --white-faint:#7c8799;
+
+    --serif:'Fraunces', Georgia, serif;
+    --sans:'IBM Plex Sans', system-ui, sans-serif;
+    --mono:'IBM Plex Mono', ui-monospace, monospace;
+
+    --gutter:clamp(18px, 5vw, 40px);
+    --maxw:940px;
   }
+
   *{box-sizing:border-box;}
-  html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;}
+  html{scroll-behavior:smooth;}
   body{
-    background:rgb(var(--ink));color:var(--cream-text);font-family:var(--sans);
-    position:fixed;inset:0;touch-action:pan-x;
+    margin:0;background:var(--black);color:var(--white);
+    font-family:var(--sans);font-size:16px;line-height:1.6;
+    -webkit-font-smoothing:antialiased;overflow-x:hidden;
   }
-  h1,h2,h3{font-family:var(--serif);font-weight:600;margin:0;letter-spacing:-0.01em;}
-  p{line-height:1.55;margin:0;}
-  a{color:inherit;}
-  button{font-family:var(--sans);cursor:pointer;}
-  canvas{position:fixed;inset:0;width:100%;height:100%;}
-  #bgCanvas{z-index:1;pointer-events:none;}
-  #fxCanvas{z-index:80;pointer-events:none;}
+  h1,h2,h3{font-family:var(--serif);font-weight:600;margin:0;letter-spacing:-0.015em;line-height:1.12;}
+  p{margin:0;}
+  a{color:var(--blue-bright);text-decoration:none;}
+  a:hover{color:var(--blue-light);}
+  :focus-visible{outline:2px solid var(--blue-bright);outline-offset:3px;border-radius:2px;}
 
-  /* ---------- top HUD ---------- */
-  .top-hud{
-    position:fixed;top:0;left:0;right:0;z-index:70;
-    display:flex;align-items:center;gap:14px;
-    padding:calc(14px + env(safe-area-inset-top)) calc(18px + env(safe-area-inset-right)) 30px calc(18px + env(safe-area-inset-left));
-    background:linear-gradient(180deg, rgba(10,12,14,.75), rgba(10,12,14,0));
-    pointer-events:none;
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 var(--gutter);}
+  .eyebrow{
+    font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--blue-light);display:flex;align-items:center;gap:9px;
   }
-  .top-hud-brand{font-family:var(--mono);font-size:11px;color:var(--charge);white-space:nowrap;display:flex;align-items:center;gap:6px;}
-  .top-hud-brand .dot{width:6px;height:6px;border-radius:50%;background:var(--charge);box-shadow:0 0 8px 2px var(--charge);}
-  .top-hud-therm{flex:1;display:flex;align-items:center;gap:10px;opacity:0;max-width:0;overflow:hidden;transition:opacity .5s ease, max-width .5s ease;}
-  .top-hud-therm.show{opacity:1;max-width:600px;}
-  .therm-track{flex:1;height:6px;border-radius:3px;background:#2a2f35;overflow:hidden;}
-  .therm-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--charge-dim),var(--charge));width:0%;transition:width 1.2s cubic-bezier(.2,.8,.2,1);box-shadow:0 0 8px 1px rgba(255,178,56,0.5);}
-  .therm-amt{font-family:var(--mono);font-size:10.5px;color:var(--charge);white-space:nowrap;}
-  .top-hud-level{font-family:var(--mono);font-size:11px;color:var(--paper-line);white-space:nowrap;}
+  .eyebrow::before{content:'';width:22px;height:1px;background:var(--blue);flex:none;}
 
-  /* ---------- back link ---------- */
-  .back-link{
-    position:fixed;left:calc(18px + env(safe-area-inset-left));bottom:calc(22px + env(safe-area-inset-bottom));z-index:85;
-    font-family:var(--mono);font-size:11.5px;color:var(--paper-line);opacity:0;pointer-events:none;
-    transition:opacity .3s ease;background:none;border:none;padding:8px;
+  /* ---------- charge rule: the one "electric" flourish ---------- */
+  .charge-rule{height:1px;border:0;margin:0;background:linear-gradient(90deg,transparent,var(--line) 12%,var(--blue) 50%,var(--line) 88%,transparent);position:relative;}
+  .charge-rule::after{
+    content:'';position:absolute;top:-1px;left:0;width:64px;height:3px;border-radius:3px;
+    background:var(--blue-bright);filter:blur(1.5px);opacity:.85;
+    animation:travel 9s linear infinite;
   }
-  .back-link.show{opacity:.55;pointer-events:auto;}
-  .back-link:hover{opacity:1;}
+  @keyframes travel{0%{left:-10%;opacity:0;}10%{opacity:.85;}90%{opacity:.85;}100%{left:100%;opacity:0;}}
 
-  /* ---------- keep going reactor button ---------- */
-  .keep-going{
-    position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translateX(-50%);
-    z-index:90;width:104px;height:104px;border-radius:50%;
-    background:radial-gradient(circle at 38% 32%, #2a1e0e, #0e0c09 72%);
-    border:none;color:var(--charge);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
-    font-family:var(--mono);font-size:10.5px;letter-spacing:.02em;text-align:center;
-    transition:transform .18s ease;
-    animation:pulseGlow 2.6s ease-in-out infinite;
+  /* ---------- header ---------- */
+  header{
+    position:sticky;top:0;z-index:50;
+    background:rgba(6,8,13,.82);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line-soft);
   }
-  .keep-going.hidden{display:none;}
-  .keep-going:hover{transform:translateX(-50%) scale(1.06);}
-  .keep-going:active{transform:translateX(-50%) scale(.97);}
-  .keep-going::before{
-    content:'';position:absolute;inset:-5px;border-radius:50%;padding:5px;
-    background:conic-gradient(from 0deg, transparent 0deg, var(--charge) 70deg, transparent 150deg, var(--charge) 230deg, transparent 320deg, var(--charge) 360deg);
-    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite:xor; mask-composite:exclude;
-    animation:spin 3s linear infinite;
-    filter:drop-shadow(0 0 6px rgba(255,178,56,.6));
-  }
-  .keep-going.zap::after{
-    content:'';position:absolute;inset:0;border-radius:50%;background:var(--charge);opacity:.55;
-    animation:zapFlash .28s ease-out;
-  }
-  @keyframes zapFlash{from{opacity:.7;transform:scale(1);}to{opacity:0;transform:scale(1.5);}}
-  @keyframes spin{to{transform:rotate(360deg);}}
-  @keyframes pulseGlow{0%,100%{box-shadow:0 0 16px 1px rgba(255,178,56,.25);}50%{box-shadow:0 0 28px 7px rgba(255,178,56,.45);}}
-  .keep-going svg{width:16px;height:16px;fill:var(--charge);margin-bottom:1px;}
-  .keep-going b{font-family:var(--serif);font-weight:600;font-size:12.5px;line-height:1.1;max-width:78px;}
+  .bar{max-width:var(--maxw);margin:0 auto;padding:12px var(--gutter);display:flex;align-items:center;gap:16px;}
+  .brand{display:flex;align-items:center;gap:11px;min-width:0;}
+  .brand-crest{width:26px;height:30px;flex:none;}
+  .brand-text{display:flex;flex-direction:column;line-height:1.15;min-width:0;}
+  .brand-greek{font-family:var(--serif);font-weight:700;font-size:15px;letter-spacing:.06em;color:var(--white);}
+  .brand-sub{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--white-faint);white-space:nowrap;}
+  nav{margin-left:auto;display:flex;align-items:center;gap:clamp(12px,2.4vw,26px);}
+  nav a.navlink{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--white-dim);}
+  nav a.navlink:hover{color:var(--white);}
+  @media(max-width:700px){ .nav-hide{display:none;} }
 
-  /* ---------- game viewport / single-stage scenes ---------- */
-  .game-viewport{position:fixed;inset:0;overflow:hidden;z-index:5;}
-  .scene{
-    position:absolute;inset:0;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;
-    padding:clamp(56px,11vh,92px) clamp(18px,5vw,40px) clamp(84px,13vh,110px);
-    opacity:0;pointer-events:none;
-    transform:scale(1.05);filter:blur(16px);
-    transition:opacity .55s ease, transform .65s cubic-bezier(.22,.9,.32,1), filter .55s ease;
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    font-family:var(--mono);font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;
+    padding:10px 16px;border:1px solid var(--blue);border-radius:2px;
+    background:transparent;color:var(--blue-light);cursor:pointer;white-space:nowrap;
+    transition:background .2s ease,color .2s ease,border-color .2s ease,transform .2s ease;
   }
-  .scene.current{opacity:1;transform:scale(1);filter:blur(0);pointer-events:auto;}
-  .scene.dark{background:rgba(var(--ink),0.88);}
-  .scene.paper{background:rgba(var(--parchment),0.94);color:var(--ink-text);}
-  .scene-inner{max-width:640px;width:100%;margin:0 auto;max-height:100%;overflow:hidden;}
-  .eyebrow-line{font-family:var(--mono);font-size:clamp(10px,1.6vh,12px);color:var(--charge);margin-bottom:clamp(8px,1.6vh,16px);display:inline-block;}
-  .scene.paper .eyebrow-line{color:var(--cardinal);}
-  .word-fly{display:inline-block;will-change:transform,opacity;}
+  .btn:hover{background:var(--blue);border-color:var(--blue);color:#fff;}
+  .btn.solid{background:var(--blue);border-color:var(--blue);color:#fff;}
+  .btn.solid:hover{background:var(--blue-bright);border-color:var(--blue-bright);}
+  .btn.lg{font-size:12.5px;padding:14px 22px;}
 
-  /* ---------- gate ---------- */
-  #scene-gate{background:radial-gradient(circle at 50% 30%,rgba(27,32,39,.9),rgba(20,23,26,.92) 70%);}
-  .gate-content{position:relative;z-index:2;text-align:center;max-width:520px;}
-  .gate-content h1{font-size:clamp(24px,5.4vh,40px);line-height:1.15;}
-  .gate-content .sub{font-family:var(--serif);font-style:italic;font-weight:400;color:var(--charge);font-size:clamp(15px,3vh,20px);margin-top:clamp(10px,2vh,16px);}
-  .hand-row{display:flex;gap:clamp(6px,1.6vw,10px);justify-content:center;margin-top:clamp(24px,4.5vh,40px);flex-wrap:wrap;}
-  .hand-btn{width:clamp(44px,8vh,56px);height:clamp(44px,8vh,56px);border-radius:50%;border:1.5px solid var(--brass);background:transparent;color:var(--cream-text);font-family:var(--mono);font-size:clamp(14px,2.4vh,18px);display:flex;align-items:center;justify-content:center;transition:all .25s ease;}
-  .hand-btn:hover,.hand-btn:focus-visible{border-color:var(--charge);color:var(--charge);transform:translateY(-3px) scale(1.05);box-shadow:0 6px 18px -4px rgba(255,178,56,.4);}
-  .hand-btn.picked{background:var(--charge);color:#1a1300;border-color:var(--charge);}
-  .gate-hint{margin-top:clamp(12px,2.4vh,20px);font-size:clamp(11px,1.8vh,13px);color:var(--paper-line);font-family:var(--mono);}
+  /* ---------- hero ---------- */
+  .hero{position:relative;padding:clamp(52px,9vh,96px) 0 clamp(36px,6vh,60px);overflow:hidden;}
+  .hero::before{
+    content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(70% 55% at 50% 0%, rgba(27,79,160,.30), transparent 70%),
+      radial-gradient(40% 40% at 88% 22%, rgba(76,134,217,.13), transparent 70%);
+  }
+  .hero-watermark{
+    position:absolute;z-index:0;top:50%;left:50%;transform:translate(-50%,-52%);
+    font-family:var(--serif);font-weight:700;font-size:min(34vw,300px);letter-spacing:.02em;
+    color:rgba(159,195,240,.045);white-space:nowrap;user-select:none;pointer-events:none;
+  }
+  .hero-inner{position:relative;z-index:1;}
+  .hero h1{font-size:clamp(34px,7.4vw,66px);margin-top:18px;max-width:14em;}
+  .hero h1 em{font-style:italic;font-weight:400;color:var(--blue-light);}
+  .hero-lede{margin-top:18px;max-width:54ch;font-size:clamp(15.5px,2.1vw,18px);color:var(--white-dim);}
+  .hero-meta{
+    margin-top:22px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;
+    font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--white-faint);
+  }
+  .pip{display:inline-flex;align-items:center;gap:7px;}
+  .pip .dot{width:6px;height:6px;border-radius:50%;background:var(--blue-bright);box-shadow:0 0 0 3px rgba(76,134,217,.16);}
 
   /* ---------- video ---------- */
-  h2.scene-title{font-size:clamp(19px,3.8vh,30px);}
-  .video-frame{position:relative;width:100%;max-height:38vh;aspect-ratio:16/9;margin:clamp(16px,3vh,26px) auto 0;border:1px solid var(--brass);border-radius:2px;background:radial-gradient(circle at 30% 20%,#2a2018,transparent 60%),linear-gradient(135deg,#20242a,#14171a 60%);display:flex;align-items:center;justify-content:center;overflow:hidden;}
-  .video-frame .initials-wm{position:absolute;font-family:var(--serif);font-weight:700;font-size:min(28vw,26vh);color:rgba(255,178,56,0.06);user-select:none;}
-  .play-btn{width:clamp(52px,9vh,72px);height:clamp(52px,9vh,72px);border-radius:50%;border:1.5px solid var(--charge);background:rgba(255,178,56,0.08);display:flex;align-items:center;justify-content:center;position:relative;z-index:2;transition:transform .2s ease;}
-  .play-btn:hover{transform:scale(1.06);}
-  .play-btn svg{fill:var(--charge);margin-left:4px;}
-  .video-caption{margin-top:clamp(8px,1.6vh,14px);font-family:var(--mono);font-size:clamp(10.5px,1.7vh,13px);color:var(--paper-line);text-align:center;}
-  .wave{display:flex;gap:3px;align-items:flex-end;height:18px;position:absolute;bottom:12px;left:12px;z-index:2;opacity:0;transition:opacity .3s ease;}
-  .wave.on{opacity:1;}
-  .wave span{width:3px;background:var(--charge);animation:bar 1s ease-in-out infinite;}
-  .wave span:nth-child(2){animation-delay:.15s;}
-  .wave span:nth-child(3){animation-delay:.3s;}
-  .wave span:nth-child(4){animation-delay:.45s;}
-  @keyframes bar{0%,100%{height:4px;}50%{height:16px;}}
+  .video-block{margin-top:clamp(26px,4.5vh,42px);}
+  .video-frame{
+    position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;
+    border:1px solid var(--line);border-radius:3px;background:var(--black-2);
+    background-image:radial-gradient(60% 60% at 50% 40%, rgba(27,79,160,.28), transparent 70%);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .video-frame iframe,.video-frame video{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#000;}
+  .video-frame .vwm{
+    position:absolute;font-family:var(--serif);font-weight:700;font-size:min(20vw,150px);
+    color:rgba(159,195,240,.05);user-select:none;
+  }
+  .play{
+    position:relative;z-index:2;width:clamp(64px,11vw,84px);height:clamp(64px,11vw,84px);border-radius:50%;
+    border:1px solid var(--blue-bright);background:rgba(27,79,160,.22);backdrop-filter:blur(2px);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+    transition:transform .2s ease,background .2s ease;box-shadow:0 0 0 0 var(--blue-glow);
+    animation:haloPulse 3.4s ease-in-out infinite;
+  }
+  .play:hover{transform:scale(1.05);background:rgba(27,79,160,.45);}
+  .play svg{fill:var(--white);margin-left:4px;width:22px;height:22px;}
+  @keyframes haloPulse{0%,100%{box-shadow:0 0 0 0 rgba(76,134,217,.30);}50%{box-shadow:0 0 0 14px rgba(76,134,217,0);}}
+  .video-frame .badge{
+    position:absolute;z-index:2;bottom:12px;left:12px;
+    font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--blue-light);border:1px solid var(--line);background:rgba(6,8,13,.72);padding:4px 8px;border-radius:2px;
+  }
+  .video-caption{
+    margin-top:12px;display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:space-between;
+    font-family:var(--mono);font-size:11px;color:var(--white-faint);
+  }
 
-  .btn{display:inline-flex;align-items:center;gap:8px;padding:clamp(10px,1.8vh,14px) clamp(18px,3vw,26px);border-radius:2px;border:1px solid var(--charge);background:transparent;color:var(--charge);font-size:clamp(12px,1.9vh,14px);letter-spacing:0.01em;transition:all .2s ease;}
-  .btn:hover{background:var(--charge);color:#1a1300;}
-  .btn.solid{background:var(--charge);color:#1a1300;}
-  .btn.solid:hover{background:#ffc561;}
-  .btn.cardinal{border-color:var(--cardinal);color:var(--cardinal);}
-  .btn.cardinal:hover{background:var(--cardinal);color:#fff;}
+  /* ---------- sections ---------- */
+  section.band{padding:clamp(52px,8vh,88px) 0;border-top:1px solid var(--line-soft);}
+  section.band.alt{background:linear-gradient(180deg,var(--black-2),var(--black));}
+  .band h2{font-size:clamp(25px,4.2vw,38px);margin-top:16px;}
+  .band-lede{margin-top:14px;max-width:58ch;color:var(--white-dim);font-size:clamp(14.5px,1.9vw,16.5px);}
 
-  /* ---------- appeal ---------- */
-  .personalized{font-family:var(--mono);font-size:clamp(11px,1.8vh,13px);color:var(--cardinal);margin-bottom:clamp(6px,1.2vh,8px);}
-  .appeal-copy p{margin-top:clamp(12px,2.4vh,20px);font-size:clamp(13.5px,2.1vh,16px);color:#3a3226;}
+  /* ---------- updates ---------- */
+  .timeline{margin-top:clamp(26px,4vh,40px);position:relative;padding-left:26px;}
+  .timeline::before{content:'';position:absolute;left:5px;top:6px;bottom:6px;width:1px;background:linear-gradient(180deg,var(--blue),var(--line) 70%,transparent);}
+  .entry{position:relative;padding-bottom:clamp(26px,4vh,38px);}
+  .entry:last-child{padding-bottom:0;}
+  .entry::before{
+    content:'';position:absolute;left:-26px;top:7px;width:11px;height:11px;border-radius:50%;
+    background:var(--black);border:2px solid var(--blue-bright);box-shadow:0 0 0 4px rgba(76,134,217,.12);
+  }
+  .entry.soon::before{border-color:var(--line);box-shadow:none;background:var(--black-2);}
+  .entry-date{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--blue-light);}
+  .entry.soon .entry-date{color:var(--white-faint);}
+  .entry h3{font-size:clamp(18px,2.6vw,22px);margin-top:8px;}
+  .entry p{margin-top:10px;color:var(--white-dim);max-width:60ch;font-size:15.5px;}
+  .entry-link{
+    display:inline-flex;align-items:center;gap:8px;margin-top:14px;
+    font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;
+    border-bottom:1px solid var(--blue);padding-bottom:3px;
+  }
+  .entry-link svg{width:13px;height:13px;fill:currentColor;}
+  .soon-list{margin:14px 0 0;padding:0;list-style:none;max-width:60ch;}
+  .soon-list li{position:relative;padding-left:20px;margin-top:9px;color:var(--white-dim);font-size:15.5px;}
+  .soon-list li::before{content:'';position:absolute;left:0;top:.62em;width:8px;height:1px;background:var(--blue);}
+  .soon-list li.more{color:var(--white-faint);font-style:italic;}
 
-  /* ---------- archive photos ---------- */
-  .photo-row{display:flex;gap:clamp(10px,2vw,18px);justify-content:center;margin-top:clamp(20px,4vh,36px);flex-wrap:wrap;}
-  .polaroid{background:#fbf8ef;padding:6px 6px 16px;box-shadow:0 8px 18px -8px rgba(0,0,0,.35);width:clamp(88px,20vh,130px);}
-  .polaroid:nth-child(1){transform:rotate(-3deg);}
-  .polaroid:nth-child(2){transform:rotate(2deg);}
-  .polaroid:nth-child(3){transform:rotate(-1.5deg);}
-  .photo-surface{aspect-ratio:4/5;position:relative;overflow:hidden;background:repeating-conic-gradient(from 0deg, rgba(0,0,0,0.05) 0deg 3deg, transparent 3deg 6deg),radial-gradient(circle at 30% 25%, #d8c49a, #8a6a45 55%, #4c3a26 100%);filter:sepia(.15);}
-  .photo-caption{font-family:var(--serif);font-style:italic;font-size:clamp(10px,1.6vh,12.5px);color:#5a4c34;text-align:center;margin-top:6px;}
-  .archive-note{font-family:var(--mono);font-size:clamp(9.5px,1.5vh,11px);color:#7a6f57;margin-top:clamp(14px,2.6vh,20px);text-align:center;}
-
-  /* ---------- alumni ---------- */
-  .alumni-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(8px,1.6vh,16px);margin-top:clamp(18px,3.4vh,30px);width:100%;}
-  .alumni-card{border:1px solid rgba(255,178,56,.16);padding:clamp(10px,2vh,18px);background:linear-gradient(180deg,rgba(28,33,38,.9),rgba(20,23,26,.9));display:flex;gap:10px;align-items:flex-start;}
-  .monogram{flex:none;width:clamp(34px,6.5vh,50px);height:clamp(34px,6.5vh,50px);border-radius:50%;border:1.5px solid var(--brass);background:radial-gradient(circle at 35% 30%,#3a3020,#1a1610);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-weight:600;font-size:clamp(12px,2vh,17px);color:var(--charge);}
-  .alumni-name{font-family:var(--serif);font-size:clamp(13px,2.1vh,17px);font-weight:600;line-height:1.15;}
-  .alumni-quote{font-style:italic;font-size:clamp(10px,1.6vh,12.5px);color:#c9c2b2;margin-top:6px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-  .video-tag{display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-family:var(--mono);font-size:9px;color:var(--charge);border:1px solid var(--charge-dim);padding:3px 6px;border-radius:2px;}
-  .tiny-dot{width:4px;height:4px;border-radius:50%;background:var(--charge);}
-
-  /* ---------- vision ---------- */
-  .house-wrap{display:flex;justify-content:center;margin:clamp(10px,2.4vh,20px) 0;}
-  .house-svg{width:min(220px,26vh);}
-  .house-svg .win{fill:#1a1f24;transition:fill 1.2s ease, filter 1.2s ease;}
-  .house-svg .win.lit{fill:var(--charge);filter:drop-shadow(0 0 6px rgba(255,178,56,.8));}
-  .house-svg .line{stroke:var(--brass);stroke-width:1.4;fill:none;}
-  .vision-copy{font-size:clamp(12.5px,2vh,15px);color:#b9b2a0;margin-top:clamp(8px,1.6vh,12px);}
-
-  /* ---------- posters ---------- */
-  .poster-row{display:flex;gap:clamp(10px,2vw,18px);flex-wrap:wrap;justify-content:center;margin-top:clamp(18px,3.6vh,32px);}
-  .poster{width:clamp(96px,16vh,140px);height:clamp(128px,21vh,186px);position:relative;padding:clamp(8px,1.6vh,14px) 10px;display:flex;flex-direction:column;justify-content:space-between;color:#1a1300;overflow:hidden;box-shadow:0 12px 24px -10px rgba(0,0,0,.5);}
-  .poster:nth-child(1){background:repeating-linear-gradient(45deg,var(--charge),var(--charge) 10px,#ffcf7a 10px,#ffcf7a 20px);transform:rotate(-4deg);}
-  .poster:nth-child(2){background:repeating-linear-gradient(-45deg,var(--cardinal),var(--cardinal) 10px,#c73b52 10px,#c73b52 20px);color:#fff;transform:rotate(3deg);}
-  .poster:nth-child(3){background:repeating-linear-gradient(45deg,var(--brass),var(--brass) 10px,#a3805a 10px,#a3805a 20px);transform:rotate(-2deg);}
-  .poster-tag{font-family:var(--mono);font-size:8px;letter-spacing:.04em;background:rgba(0,0,0,.65);color:#fff;padding:2px 5px;align-self:flex-start;}
-  .poster-title{font-family:var(--serif);font-weight:700;font-size:clamp(13px,2.4vh,18px);line-height:1.05;}
-  .poster-sub{font-family:var(--mono);font-size:8.5px;}
-
-  /* ---------- pledge ---------- */
-  .big-therm{margin:clamp(6px,1.4vh,10px) 0 clamp(16px,3vh,26px);width:100%;}
-  .big-therm-top{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono);}
-  .big-therm-raised{font-size:clamp(20px,4.4vh,32px);color:var(--charge);}
-  .big-therm-goal{font-size:clamp(10px,1.6vh,12.5px);color:var(--paper-line);}
-  .big-therm-track{height:clamp(9px,1.6vh,13px);background:#2a2f35;border-radius:7px;overflow:hidden;margin-top:8px;}
-  .big-therm-fill{height:100%;border-radius:7px;background:linear-gradient(90deg,var(--charge-dim),var(--charge));width:0%;transition:width 1s cubic-bezier(.2,.8,.2,1);}
-  .big-therm-note{font-family:var(--mono);font-size:clamp(8.5px,1.3vh,10px);color:#68625a;margin-top:6px;}
-  .pledge-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:clamp(10px,2vh,16px);}
-  .pledge-opt{padding:clamp(8px,1.8vh,13px) 6px;border:1px solid var(--brass);background:transparent;color:var(--cream-text);font-family:var(--mono);font-size:clamp(11px,1.8vh,14px);text-align:center;transition:all .2s ease;}
-  .pledge-opt:hover,.pledge-opt.active{border-color:var(--charge);background:rgba(255,178,56,.1);color:var(--charge);}
-  .custom-row{display:flex;gap:8px;margin-top:10px;}
-  .custom-row input{flex:1;background:transparent;border:1px solid var(--brass);color:var(--cream-text);font-family:var(--mono);padding:clamp(8px,1.6vh,12px);border-radius:2px;font-size:clamp(11px,1.8vh,13px);min-width:0;}
-  .custom-row input:focus-visible{outline:2px solid var(--charge);outline-offset:2px;}
-  .pledge-cta{margin-top:clamp(12px,2.2vh,20px);width:100%;justify-content:center;font-size:clamp(13px,2vh,15px);padding:clamp(11px,2vh,16px);}
-  .pledge-confirm{margin-top:10px;font-family:var(--mono);font-size:clamp(10px,1.6vh,12px);color:var(--charge);min-height:14px;}
+  /* ---------- faq ---------- */
+  .faq{margin-top:clamp(24px,4vh,36px);border-top:1px solid var(--line-soft);}
+  details{border-bottom:1px solid var(--line-soft);}
+  summary{
+    list-style:none;cursor:pointer;padding:18px 34px 18px 0;position:relative;
+    font-family:var(--serif);font-weight:600;font-size:clamp(16px,2.2vw,19px);color:var(--white);
+  }
+  summary::-webkit-details-marker{display:none;}
+  summary:hover{color:var(--blue-light);}
+  summary::after{
+    content:'';position:absolute;right:6px;top:50%;width:9px;height:9px;
+    border-right:1.5px solid var(--blue-bright);border-bottom:1.5px solid var(--blue-bright);
+    transform:translateY(-70%) rotate(45deg);transition:transform .22s ease;
+  }
+  details[open] summary::after{transform:translateY(-30%) rotate(-135deg);}
+  .answer{padding:0 34px 20px 0;color:var(--white-dim);max-width:66ch;font-size:15.5px;}
+  .tag-fake{
+    display:inline-block;margin-bottom:10px;font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--blue-light);border:1px dashed var(--line);padding:3px 7px;border-radius:2px;
+  }
 
   /* ---------- form ---------- */
-  .form-grid{display:flex;flex-direction:column;gap:clamp(8px,1.6vh,13px);margin-top:clamp(14px,2.6vh,22px);width:100%;}
-  .form-row{display:flex;gap:10px;}
-  .form-row > div{flex:1;min-width:0;}
-  .form-grid label{font-family:var(--mono);font-size:clamp(9.5px,1.5vh,11px);color:var(--paper-line);display:block;margin-bottom:4px;}
-  .form-grid input[type=text],.form-grid input[type=email],.form-grid textarea{width:100%;background:transparent;border:1px solid var(--brass);color:var(--cream-text);font-family:var(--sans);padding:clamp(7px,1.4vh,11px);border-radius:2px;font-size:clamp(12px,1.9vh,14px);resize:none;}
-  .form-grid input:focus-visible,.form-grid textarea:focus-visible{outline:2px solid var(--charge);outline-offset:2px;}
-  .file-drop{border:1.5px dashed var(--brass);padding:clamp(10px,1.8vh,16px);text-align:center;border-radius:2px;font-family:var(--mono);font-size:clamp(10px,1.6vh,12px);color:var(--paper-line);position:relative;}
-  .file-drop input{position:absolute;inset:0;opacity:0;cursor:pointer;}
-  .file-drop.has-file{border-color:var(--charge);color:var(--charge);}
-  .submit-confirm{font-family:var(--mono);font-size:clamp(10px,1.6vh,12px);color:var(--charge);min-height:14px;margin-top:2px;}
-  .form-title{font-size:clamp(17px,3vh,22px);}
-  .form-sub{color:#b9b2a0;margin-top:6px;font-size:clamp(11.5px,1.8vh,13.5px);}
+  .form-card{
+    margin-top:clamp(26px,4vh,40px);border:1px solid var(--line);border-radius:3px;
+    background:linear-gradient(180deg,var(--panel),#0a0f19);padding:clamp(20px,3.6vw,34px);
+  }
+  .field{margin-top:18px;}
+  .field:first-child{margin-top:0;}
+  .field > label,.legend{
+    display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+    color:var(--white-faint);margin-bottom:8px;
+  }
+  .row{display:flex;gap:14px;flex-wrap:wrap;}
+  .row > .field{flex:1 1 220px;margin-top:18px;}
+  input[type=text],input[type=email],textarea{
+    width:100%;background:rgba(6,8,13,.7);border:1px solid var(--line);border-radius:2px;
+    color:var(--white);font-family:var(--sans);font-size:15px;padding:11px 12px;
+  }
+  input::placeholder,textarea::placeholder{color:#5a6475;}
+  input:focus,textarea:focus{border-color:var(--blue-bright);outline:none;box-shadow:0 0 0 3px rgba(76,134,217,.14);}
+  textarea{resize:vertical;min-height:88px;}
+  fieldset{border:0;padding:0;margin:26px 0 0;}
+  .checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:10px;}
+  .check{
+    display:flex;gap:11px;align-items:flex-start;padding:13px;cursor:pointer;
+    border:1px solid var(--line);border-radius:2px;background:rgba(6,8,13,.45);
+    transition:border-color .2s ease,background .2s ease;
+  }
+  .check:hover{border-color:var(--blue);}
+  .check:has(input:checked){border-color:var(--blue-bright);background:rgba(27,79,160,.18);}
+  .check input{flex:none;margin:3px 0 0;width:16px;height:16px;accent-color:var(--blue-bright);}
+  .check-title{font-weight:600;font-size:14.5px;line-height:1.3;}
+  .check-note{display:block;font-size:12.5px;color:var(--white-faint);margin-top:3px;line-height:1.45;}
+  .form-actions{margin-top:26px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;}
+  .form-note{font-family:var(--mono);font-size:11px;color:var(--white-faint);flex:1 1 220px;min-width:0;}
+  .form-status{margin-top:16px;font-family:var(--mono);font-size:12px;min-height:1.2em;color:var(--blue-light);}
+  .form-status.err{color:#ff9a8a;}
 
-  @media(prefers-reduced-motion: reduce){
-    .scene{transition:opacity .2s ease;}
-    .keep-going, .keep-going::before{animation:none;}
-    *{transition-duration:.001ms !important;animation-duration:.001ms !important;}
+  /* ---------- footer ---------- */
+  footer{border-top:1px solid var(--line-soft);padding:34px 0 46px;background:var(--black-2);}
+  .foot{display:flex;flex-wrap:wrap;gap:18px 26px;align-items:center;}
+  .foot-crest{width:24px;height:28px;flex:none;opacity:.85;}
+  .foot-text{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--white-faint);line-height:1.7;}
+  .foot-right{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--white-faint);}
+
+  /* ---------- crest colors ---------- */
+  .crest-outline{fill:none;stroke:var(--blue-bright);stroke-width:2.4;}
+  .crest-fill{fill:rgba(27,79,160,.22);}
+  .crest-letters{fill:var(--white);font-family:var(--serif);font-weight:700;}
+  .crest-bolt{fill:var(--blue-light);}
+
+  /* ---------- reveal ---------- */
+  .reveal{opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .6s cubic-bezier(.2,.8,.25,1);}
+  .reveal.in{opacity:1;transform:none;}
+
+  @media(prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto;}
+    *,*::before,*::after{animation:none !important;transition-duration:.001ms !important;}
+    .reveal{opacity:1;transform:none;}
   }
 </style>
+<noscript><style>.reveal{opacity:1;transform:none;}</style></noscript>
 </head>
 <body>
 
-  <canvas id="bgCanvas" aria-hidden="true"></canvas>
+<!-- reusable crest -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="crest" viewBox="0 0 48 56">
+    <path class="crest-fill" d="M3 3h42v29c0 9.5-9.4 14.2-21 21C12.4 46.2 3 41.5 3 32z"/>
+    <path class="crest-outline" d="M3 3h42v29c0 9.5-9.4 14.2-21 21C12.4 46.2 3 41.5 3 32z"/>
+    <path class="crest-outline" d="M3 15h42" style="stroke-width:1.2;opacity:.55"/>
+    <text class="crest-letters" x="24" y="32" font-size="13.5" text-anchor="middle">ΘΔΧ</text>
+    <path class="crest-bolt" d="M25.6 36.5l-5.6 7.6h3.4l-.7 5 5.9-7.9h-3.9z"/>
+  </symbol>
+</svg>
 
-  <div class="top-hud">
-    <span class="top-hud-brand"><span class="dot"></span>TDC — Est. 1965</span>
-    <div class="top-hud-therm" id="thermHud">
-      <div class="therm-track"><div class="therm-fill" id="thermFillSmall"></div></div>
-      <span class="therm-amt" id="thermAmtSmall">$0 / $5.0M</span>
-    </div>
-    <span class="top-hud-level" id="levelLabel">01 / 09</span>
+<header>
+  <div class="bar">
+    <a class="brand" href="#top" aria-label="Theta Deuteron Charge — home">
+      <svg class="brand-crest" aria-hidden="true"><use href="#crest"></use></svg>
+      <span class="brand-text">
+        <span class="brand-greek">ΘΔΧ</span>
+        <span class="brand-sub">Theta Deuteron Charge · MIT</span>
+      </span>
+    </a>
+    <nav>
+      <a class="navlink nav-hide" href="#story">Story</a>
+      <a class="navlink nav-hide" href="#updates">Updates</a>
+      <a class="navlink nav-hide" href="#faq">FAQ</a>
+      <a class="btn" href="#interest">Get involved</a>
+    </nav>
   </div>
+</header>
 
-  <div class="game-viewport" id="gameViewport">
+<main id="top">
 
-    <!-- 0 : GATE -->
-    <section class="scene current" id="scene-gate">
-      <div class="gate-content">
-        <span class="eyebrow-line">Before we start</span>
-        <h1>Count your five closest friends on one hand.</h1>
-        <p class="sub">How many of them are from TDC?</p>
-        <div class="hand-row" role="group" aria-label="Choose a number from zero to five">
-          <button class="hand-btn" data-n="0">0</button>
-          <button class="hand-btn" data-n="1">1</button>
-          <button class="hand-btn" data-n="2">2</button>
-          <button class="hand-btn" data-n="3">3</button>
-          <button class="hand-btn" data-n="4">4</button>
-          <button class="hand-btn" data-n="5">5</button>
-        </div>
-        <p class="gate-hint">Tap a number to continue</p>
+  <!-- ========== HERO + VIDEO ========== -->
+  <section class="hero" id="story">
+    <div class="hero-watermark" aria-hidden="true">ΘΔΧ</div>
+    <div class="wrap hero-inner">
+      <span class="eyebrow">Theta Deuteron Charge · Massachusetts Institute of Technology</span>
+      <h1>Re-charge <em>the Charge.</em></h1>
+      <p class="hero-lede">
+        The house is being rebuilt — the building, the endowment behind it, and the
+        alumni network that makes it worth living in. The full story is in the film below.
+        Everything else on this page is how you get in early.
+      </p>
+      <div class="hero-meta">
+        <span class="pip"><span class="dot"></span>Teaser site · more coming</span>
+        <span>Watch first · 4 min</span>
       </div>
-    </section>
 
-    <!-- 1 : VIDEO -->
-    <section class="scene dark" id="scene-video">
-      <div class="scene-inner">
-        <span class="eyebrow-line">A message from an alum</span>
-        <h2 class="scene-title">Dave Blundin, on why he's showing up now.</h2>
-        <div class="video-frame" id="videoFrame">
-          <span class="initials-wm">DB</span>
-          <button class="play-btn" id="playBtn" aria-label="Play placeholder video">
-            <svg width="20" height="20" viewBox="0 0 24 24"><path d="M6 4l14 8-14 8V4z"/></svg>
+      <div class="video-block">
+        <!--
+          ===== VIDEO: pick one =====
+          (a) Hosted embed — set data-embed to the YouTube/Vimeo player URL:
+              <div class="video-frame" id="videoFrame" data-embed="https://www.youtube.com/embed/VIDEO_ID?autoplay=1&rel=0">
+          (b) Self-hosted file — set data-src to an .mp4 in this repo:
+              <div class="video-frame" id="videoFrame" data-src="media/recharge.mp4" data-poster="media/poster.jpg">
+          Leave both empty and the frame stays a branded placeholder.
+        -->
+        <div class="video-frame" id="videoFrame" data-embed="" data-src="" data-poster="">
+          <span class="vwm" aria-hidden="true">ΘΔΧ</span>
+          <button class="play" id="playBtn" aria-label="Play the film">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4l14 8-14 8V4z"/></svg>
           </button>
-          <div class="wave" id="wave"><span></span><span></span><span></span><span></span></div>
+          <span class="badge" id="videoBadge">Film — placeholder</span>
         </div>
-        <p class="video-caption">Placeholder — final footage from Dave Blundin goes here.</p>
-      </div>
-    </section>
-
-    <!-- 2 : APPEAL -->
-    <section class="scene paper" id="scene-appeal">
-      <div class="scene-inner">
-        <p class="personalized" id="personalizedLine"></p>
-        <span class="eyebrow-line">The appeal</span>
-        <h2 class="scene-title" style="font-size:clamp(24px,5vh,40px);">Re-charge The Charge.</h2>
-        <div class="appeal-copy">
-          <p>Sixty years ago, a handful of MIT students built something that outlasted the furniture, the rules, and every assumption about what a house could be: brothers who invest in each other's success for life. The Charge has been through hard years — re-charging it rebuilds the house and the endowment behind it, so that network stays lit for whoever joins next.</p>
+        <div class="video-caption">
+          <span>The whole story, start to finish.</span>
+          <span>Final cut drops in here before launch.</span>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- 3 : ARCHIVE -->
-    <section class="scene dark" id="scene-archive">
-      <div class="scene-inner" style="text-align:center;">
-        <span class="eyebrow-line">The archive</span>
-        <h2 class="scene-title">Sixty years of it.</h2>
-        <div class="photo-row">
-          <div class="polaroid"><div class="photo-surface"></div><p class="photo-caption">Founders, 1965</p></div>
-          <div class="polaroid"><div class="photo-surface"></div><p class="photo-caption">Spring Weekend, 1991</p></div>
-          <div class="polaroid"><div class="photo-surface"></div><p class="photo-caption">Reunion, 2004</p></div>
-        </div>
-        <p class="archive-note">Placeholder photos — real archive images go here.</p>
+  <hr class="charge-rule">
+
+  <!-- ========== UPDATES ========== -->
+  <section class="band alt" id="updates">
+    <div class="wrap">
+      <div class="reveal">
+        <span class="eyebrow">Updates</span>
+        <h2>What's happened, and what's next.</h2>
+        <p class="band-lede">
+          Every step of the recharge gets posted here, newest first. Nothing to sign up for yet —
+          the interest form at the bottom is how you get told first.
+        </p>
       </div>
-    </section>
 
-    <!-- 4 : ALUMNI -->
-    <section class="scene dark" id="scene-alumni">
-      <div class="scene-inner" style="text-align:center;">
-        <span class="eyebrow-line">The circuit</span>
-        <h2 class="scene-title">Some of the charge that came before.</h2>
-        <div class="alumni-grid">
-          <div class="alumni-card">
-            <div class="monogram">NR</div>
-            <div>
-              <div class="alumni-name">Neil Robertson</div>
-              <p class="alumni-quote">"[Placeholder — fondest TDC memory, in his own words.]"</p>
-              <span class="video-tag"><span class="tiny-dot"></span>Video coming soon</span>
-            </div>
+      <div class="timeline">
+
+        <article class="entry reveal">
+          <div class="entry-date">September 21, 2026</div>
+          <h3>This site is live — and the letter is out.</h3>
+          <p>
+            A letter went out to the brotherhood today laying out why we're recharging the Charge now,
+            what the plan looks like, and what we're asking for. This site is its companion: the film
+            above tells the story, and this section is where the plan gets filled in from here.
+          </p>
+          <!-- LETTER: replace href with the hosted copy of the emailed letter -->
+          <a class="entry-link" id="letterLink" href="#" target="_blank" rel="noopener">
+            Read the letter
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h7v2H7v10h10v-5h2v7H5zM14 5h5v5h-2V8.4l-6.3 6.3-1.4-1.4L15.6 7H14z"/></svg>
+          </a>
+        </article>
+
+        <article class="entry soon reveal">
+          <div class="entry-date">Coming soon</div>
+          <h3>Still being written.</h3>
+          <ul class="soon-list">
+            <li>Details on where to pledge donations — accounts, structure, and tax treatment</li>
+            <li>The Founder House vision, in full</li>
+            <li>Renovation scope, budget, and the timeline to reopening the house</li>
+            <li>How the alumni mentoring network will actually work for undergrads</li>
+            <li class="more">…and more.</li>
+          </ul>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== FAQ ========== -->
+  <section class="band" id="faq">
+    <div class="wrap">
+      <div class="reveal">
+        <span class="eyebrow">Questions</span>
+        <h2>Frequently asked questions.</h2>
+        <p class="band-lede">
+          <strong>Template content.</strong> Every question and answer below is placeholder copy,
+          written to be swapped out one-for-one once the real answers are settled.
+        </p>
+      </div>
+
+      <div class="faq reveal">
+        <details>
+          <summary>Placeholder question one — is any of this the real FAQ copy?</summary>
+          <div class="answer">
+            <span class="tag-fake">Placeholder answer</span>
+            No. This is dummy text sitting in the real layout so the section can be reviewed
+            before the content exists. Replace this paragraph with the actual answer and delete this note.
           </div>
-          <div class="alumni-card">
-            <div class="monogram">DB</div>
-            <div>
-              <div class="alumni-name">Dave Blundin</div>
-              <p class="alumni-quote">"[Placeholder — fondest TDC memory, in his own words.]"</p>
-              <span class="video-tag"><span class="tiny-dot"></span>Video coming soon</span>
-            </div>
-          </div>
-          <div class="alumni-card">
-            <div class="monogram">MS</div>
-            <div>
-              <div class="alumni-name">Michael Saylor</div>
-              <p class="alumni-quote">"[Placeholder — fondest TDC memory, in his own words.]"</p>
-              <span class="video-tag"><span class="tiny-dot"></span>Video coming soon</span>
-            </div>
-          </div>
-          <div class="alumni-card">
-            <div class="monogram">SB</div>
-            <div>
-              <div class="alumni-name">Sid Banerjee</div>
-              <p class="alumni-quote">"[Placeholder — fondest TDC memory, in his own words.]"</p>
-              <span class="video-tag"><span class="tiny-dot"></span>Video coming soon</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+        </details>
 
-    <!-- 5 : VISION -->
-    <section class="scene dark" id="scene-vision">
-      <div class="scene-inner" style="text-align:center;">
-        <span class="eyebrow-line">The vision</span>
-        <h2 class="scene-title">A Founder House for the next MIT founder.</h2>
-        <div class="house-wrap">
-          <svg class="house-svg" id="houseSvg" viewBox="0 0 300 240">
-            <polygon class="line" points="20,120 150,30 280,120"/>
-            <rect class="line" x="40" y="120" width="220" height="100"/>
-            <rect class="win win-1" x="65" y="145" width="30" height="30"/>
-            <rect class="win win-2" x="115" y="145" width="30" height="30"/>
-            <rect class="win win-3" x="165" y="145" width="30" height="30"/>
-            <rect class="win win-4" x="215" y="145" width="30" height="30"/>
-            <rect class="line" x="140" y="175" width="40" height="45"/>
-          </svg>
-        </div>
-        <p class="vision-copy">The endowment restarts the house and funds a standing alumni mentoring network — making TDC the reason a prospective student picks this house over anywhere else on campus.</p>
-      </div>
-    </section>
-
-    <!-- 6 : SOCIAL -->
-    <section class="scene dark" id="scene-social">
-      <div class="scene-inner" style="text-align:center;">
-        <span class="eyebrow-line">Also, it's still a house</span>
-        <h2 class="scene-title">Brotherhood, and a good time.</h2>
-        <div class="poster-row">
-          <div class="poster"><span class="poster-tag">Placeholder</span><div><div class="poster-title">Spring Weekend</div><div class="poster-sub">TDC · Est. 1965</div></div></div>
-          <div class="poster"><span class="poster-tag">Placeholder</span><div><div class="poster-title">Charge Formal</div><div class="poster-sub">Black tie, brass rules</div></div></div>
-          <div class="poster"><span class="poster-tag">Placeholder</span><div><div class="poster-title">Founders' Day</div><div class="poster-sub">60 years running</div></div></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 7 : PLEDGE -->
-    <section class="scene dark" id="scene-pledge">
-      <div class="scene-inner">
-        <span class="eyebrow-line">Recharge the line</span>
-        <h2 class="scene-title">Put your name back on the circuit.</h2>
-        <div class="big-therm">
-          <div class="big-therm-top">
-            <span class="big-therm-raised" id="bigThermRaised">$0</span>
-            <span class="big-therm-goal">of $5,000,000 goal</span>
+        <details>
+          <summary>Placeholder question two — how long should an answer run?</summary>
+          <div class="answer">
+            <span class="tag-fake">Placeholder answer</span>
+            About this long. Two or three sentences reads well at every width, and links work fine inside
+            an answer — <a href="#interest">like this one</a>. Longer answers are better split into a second question.
           </div>
-          <div class="big-therm-track"><div class="big-therm-fill" id="bigThermFill"></div></div>
-          <p class="big-therm-note">Sample data for preview — connect to live totals before launch.</p>
-        </div>
-        <div class="pledge-grid" role="group" aria-label="Choose a pledge amount">
-          <button class="pledge-opt" data-amt="100">$100</button>
-          <button class="pledge-opt" data-amt="500">$500</button>
-          <button class="pledge-opt" data-amt="1000">$1,000</button>
-          <button class="pledge-opt" data-amt="5000">$5,000</button>
-        </div>
-        <div class="custom-row">
-          <input type="text" inputmode="numeric" id="customAmt" placeholder="Custom amount">
-          <button class="btn" id="customAmtBtn">Use</button>
-        </div>
-        <button class="btn solid pledge-cta" id="pledgeBtn">Pledge $0</button>
-        <p class="pledge-confirm" id="pledgeConfirm"></p>
-      </div>
-    </section>
+        </details>
 
-    <!-- 8 : FORM -->
-    <section class="scene dark" id="scene-form">
-      <div class="scene-inner">
-        <span class="eyebrow-line">One more thing</span>
-        <h2 class="form-title">Add your story to the wall.</h2>
-        <p class="form-sub">Fill in your profile and drop a memento — a photo, a video, or an update on what you're up to.</p>
-        <form class="form-grid" id="memoryForm">
-          <div class="form-row">
-            <div>
+        <details>
+          <summary>Placeholder question three — can an answer hold a list?</summary>
+          <div class="answer">
+            <span class="tag-fake">Placeholder answer</span>
+            Yes, and it stays on-brand:
+            <ul class="soon-list">
+              <li>First placeholder item</li>
+              <li>Second placeholder item</li>
+              <li>Third placeholder item</li>
+            </ul>
+          </div>
+        </details>
+
+        <details>
+          <summary>Placeholder question four — what about the money question?</summary>
+          <div class="answer">
+            <span class="tag-fake">Placeholder answer</span>
+            Lorem ipsum dolor sit amet. The real version of this answer will cover how funds are held
+            and who oversees them, and it will point at the pledge details once those are published.
+          </div>
+        </details>
+
+        <details>
+          <summary>Placeholder question five — who do I ask if my question isn't here?</summary>
+          <div class="answer">
+            <span class="tag-fake">Placeholder answer</span>
+            Use the form below and say so in the notes. The final copy will name a real contact here.
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <hr class="charge-rule">
+
+  <!-- ========== INTEREST FORM ========== -->
+  <section class="band alt" id="interest">
+    <div class="wrap">
+      <div class="reveal">
+        <span class="eyebrow">Get involved</span>
+        <h2>Tell us how you want to help.</h2>
+        <p class="band-lede">
+          This isn't a commitment and it isn't a donation — it's a flag that you're in.
+          We'll come back to you with specifics when the details are ready.
+        </p>
+      </div>
+
+      <div class="form-card reveal">
+        <form id="interestForm" novalidate>
+          <div class="row">
+            <div class="field">
               <label for="fName">Name</label>
-              <input type="text" id="fName" required>
+              <input type="text" id="fName" name="name" autocomplete="name" placeholder="First and last" required>
             </div>
-            <div style="flex:0 0 90px;">
+            <div class="field">
+              <label for="fEmail">Email</label>
+              <input type="email" id="fEmail" name="email" autocomplete="email" placeholder="you@example.com" required>
+            </div>
+            <div class="field" style="flex:0 1 130px;">
               <label for="fYear">Class year</label>
-              <input type="text" id="fYear">
+              <input type="text" id="fYear" name="class_year" inputmode="numeric" placeholder="'94">
             </div>
           </div>
-          <div>
-            <label for="fEmail">Email</label>
-            <input type="email" id="fEmail" required>
-          </div>
-          <div>
-            <label for="fMemory">Favorite TDC memory or update</label>
-            <textarea id="fMemory" rows="2"></textarea>
-          </div>
-          <div>
-            <label for="fFile">Upload a memento</label>
-            <div class="file-drop" id="fileDrop">
-              <span id="fileDropText">Tap to choose a file</span>
-              <input type="file" id="fFile">
+
+          <fieldset>
+            <legend class="legend">I'm interested in — choose any</legend>
+            <div class="checks">
+              <label class="check">
+                <input type="checkbox" name="interest" value="donations">
+                <span>
+                  <span class="check-title">Donations</span>
+                  <span class="check-note">Pledging capital toward the house and the endowment.</span>
+                </span>
+              </label>
+              <label class="check">
+                <input type="checkbox" name="interest" value="volunteering">
+                <span>
+                  <span class="check-title">Volunteering</span>
+                  <span class="check-note">Time on the committees doing the actual work.</span>
+                </span>
+              </label>
+              <label class="check">
+                <input type="checkbox" name="interest" value="mentoring">
+                <span>
+                  <span class="check-title">Mentoring new startups</span>
+                  <span class="check-note">Advising undergrad founders coming out of the house.</span>
+                </span>
+              </label>
+              <label class="check">
+                <input type="checkbox" name="interest" value="updates">
+                <span>
+                  <span class="check-title">Just keep me posted</span>
+                  <span class="check-note">Updates only, no ask attached.</span>
+                </span>
+              </label>
             </div>
+          </fieldset>
+
+          <div class="field" style="margin-top:26px;">
+            <label for="fNotes">Anything else <span style="text-transform:none;letter-spacing:0;">(optional)</span></label>
+            <textarea id="fNotes" name="notes" rows="3" placeholder="Questions, connections, what you'd want to work on…"></textarea>
           </div>
-          <button type="submit" class="btn cardinal" style="justify-content:center;">Save my story</button>
-          <p class="submit-confirm" id="submitConfirm"></p>
+
+          <div class="form-actions">
+            <button type="submit" class="btn solid lg" id="submitBtn">Count me in</button>
+            <p class="form-note">No payment here. Nothing shared outside the recharge committee.</p>
+          </div>
+          <p class="form-status" id="formStatus" role="status" aria-live="polite"></p>
         </form>
       </div>
-    </section>
+    </div>
+  </section>
 
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <svg class="foot-crest" aria-hidden="true"><use href="#crest"></use></svg>
+    <div class="foot-text">
+      Theta Delta Chi · Theta Deuteron Charge · MIT<br>
+      Re-charge the Charge — teaser site
+    </div>
+    <div class="foot-right">ΘΔΧ</div>
   </div>
-
-  <canvas id="fxCanvas" aria-hidden="true"></canvas>
-
-  <button class="back-link" id="backLink">‹ back</button>
-  <button class="keep-going hidden" id="keepGoing">
-    <svg viewBox="0 0 24 24"><path d="M13 2 3 14h6l-1 8 11-13h-7l1-7z"/></svg>
-    <b id="keepGoingLabel">Keep Going</b>
-  </button>
+</footer>
 
 <script>
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /* =========================================================
+     CONFIG — the three things to set before launch
+     ========================================================= */
 
-  /* ============ PARTICLE SYSTEM ============ */
-  const bgCanvas = document.getElementById('bgCanvas');
-  const fxCanvas = document.getElementById('fxCanvas');
-  const bgCtx = bgCanvas.getContext('2d');
-  const fxCtx = fxCanvas.getContext('2d');
+  // 1. Hosted copy of the emailed letter (web archive link, PDF, Google Doc, …).
+  //    Leave '' and the "Read the letter" link hides itself.
+  const LETTER_URL = '';
 
-  function fitCanvas(canvas){
-    const dpr = Math.min(window.devicePixelRatio||1, 2);
-    canvas.width = innerWidth*dpr;
-    canvas.height = innerHeight*dpr;
-    canvas.getContext('2d').setTransform(dpr,0,0,dpr,0,0);
-  }
-  function fitAll(){ fitCanvas(bgCanvas); fitCanvas(fxCanvas); }
-  fitAll();
-  window.addEventListener('resize', fitAll);
+  // 2. Where the interest form posts. Any endpoint accepting a JSON POST works
+  //    (Formspree, Basin, a Google Apps Script web app, your own handler).
+  //    Leave '' and the form falls back to MAILTO_FALLBACK.
+  const FORM_ENDPOINT = '';
 
-  const ambient = [];
-  const AMBIENT_N = reducedMotion ? 0 : Math.round((innerWidth*innerHeight)/26000);
-  for(let i=0;i<AMBIENT_N;i++){
-    ambient.push({
-      x: Math.random()*innerWidth, y: Math.random()*innerHeight,
-      vx: (Math.random()*2-1)*0.18, vy: (Math.random()*2-1)*0.18,
-      r: Math.random()*1.6+0.6, a: Math.random()*0.35+0.15
+  // 3. Fallback if FORM_ENDPOINT is empty: opens the visitor's mail client with
+  //    their answers prefilled. Leave '' to disable and show a config notice instead.
+  const MAILTO_FALLBACK = '';
+
+  /* ========================= LETTER LINK ========================= */
+  (function(){
+    const link = document.getElementById('letterLink');
+    if(LETTER_URL){ link.href = LETTER_URL; }
+    else { link.style.display = 'none'; }
+  })();
+
+  /* ========================= VIDEO ========================= */
+  (function(){
+    const frame = document.getElementById('videoFrame');
+    const btn = document.getElementById('playBtn');
+    const badge = document.getElementById('videoBadge');
+    const embed = frame.dataset.embed;
+    const src = frame.dataset.src;
+
+    if(embed || src){ badge.textContent = 'Film'; }
+
+    btn.addEventListener('click', function(){
+      if(embed){
+        const iframe = document.createElement('iframe');
+        iframe.src = embed;
+        iframe.title = 'Re-charge the Charge — the film';
+        iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture; fullscreen';
+        iframe.allowFullscreen = true;
+        frame.replaceChildren(iframe);
+        return;
+      }
+      if(src){
+        const video = document.createElement('video');
+        video.src = src;
+        video.controls = true;
+        video.autoplay = true;
+        video.playsInline = true;
+        if(frame.dataset.poster) video.poster = frame.dataset.poster;
+        frame.replaceChildren(video);
+        return;
+      }
+      badge.textContent = 'Film not attached yet';
+      btn.animate(
+        [{transform:'translateX(0)'},{transform:'translateX(-5px)'},{transform:'translateX(5px)'},{transform:'translateX(0)'}],
+        {duration:260, easing:'ease-in-out'}
+      );
     });
-  }
+  })();
 
-  let bursts = [];
-  function spawnBurst(x, y, opts){
-    if(reducedMotion) return;
-    opts = opts||{};
-    const count = opts.count||14;
-    for(let i=0;i<count;i++){
-      const angle = opts.upward ? (Math.PI*1.5 + (Math.random()*1.6-0.8)) : Math.random()*Math.PI*2;
-      const speed = (Math.random()*2.6+1)*(opts.speedMul||1);
-      bursts.push({
-        x, y,
-        vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed,
-        r: Math.random()*2.4+1.2,
-        life: 1, decay: Math.random()*0.018+0.014,
-        color: opts.color || '255,178,56'
-      });
+  /* ========================= INTEREST FORM ========================= */
+  (function(){
+    const form = document.getElementById('interestForm');
+    const status = document.getElementById('formStatus');
+    const submitBtn = document.getElementById('submitBtn');
+
+    function say(msg, isError){
+      status.textContent = msg;
+      status.classList.toggle('err', !!isError);
     }
-  }
 
-  function tick(){
-    // ambient layer
-    bgCtx.clearRect(0,0,innerWidth,innerHeight);
-    for(let i=0;i<ambient.length;i++){
-      const p = ambient[i];
-      p.x += p.vx; p.y += p.vy;
-      if(p.x<0) p.x=innerWidth; if(p.x>innerWidth) p.x=0;
-      if(p.y<0) p.y=innerHeight; if(p.y>innerHeight) p.y=0;
-      bgCtx.beginPath();
-      bgCtx.arc(p.x,p.y,p.r,0,Math.PI*2);
-      bgCtx.fillStyle = `rgba(255,178,56,${p.a})`;
-      bgCtx.fill();
-      for(let j=i+1;j<ambient.length;j++){
-        const q = ambient[j];
-        const dx=p.x-q.x, dy=p.y-q.y, d=Math.sqrt(dx*dx+dy*dy);
-        if(d<110){
-          bgCtx.strokeStyle = `rgba(255,178,56,${0.09*(1-d/110)})`;
-          bgCtx.lineWidth = 1;
-          bgCtx.beginPath(); bgCtx.moveTo(p.x,p.y); bgCtx.lineTo(q.x,q.y); bgCtx.stroke();
+    // form.name would resolve to the form's own name attribute, so go through elements
+    const el = form.elements;
+
+    function collect(){
+      const interests = [...form.querySelectorAll('input[name="interest"]:checked')].map(i=>i.value);
+      return {
+        name: el.name.value.trim(),
+        email: el.email.value.trim(),
+        class_year: el.class_year.value.trim(),
+        interest: interests,
+        notes: el.notes.value.trim(),
+        page: location.href,
+        submitted_at: new Date().toISOString()
+      };
+    }
+
+    function mailto(data){
+      const body = [
+        'Name: ' + data.name,
+        'Email: ' + data.email,
+        'Class year: ' + (data.class_year || '—'),
+        'Interested in: ' + (data.interest.join(', ') || '—'),
+        '',
+        'Notes:',
+        data.notes || '—'
+      ].join('\n');
+      return 'mailto:' + MAILTO_FALLBACK
+        + '?subject=' + encodeURIComponent('Re-charge the Charge — interest from ' + data.name)
+        + '&body=' + encodeURIComponent(body);
+    }
+
+    form.addEventListener('submit', async function(e){
+      e.preventDefault();
+      const data = collect();
+
+      if(!data.name){ say('Add your name first.', true); el.name.focus(); return; }
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)){ say('That email address looks incomplete.', true); el.email.focus(); return; }
+      if(!data.interest.length){ say('Pick at least one way you want to help.', true); return; }
+
+      if(!FORM_ENDPOINT){
+        if(MAILTO_FALLBACK){
+          say('Opening your email app to send this — hit send and you\'re in.');
+          window.location.href = mailto(data);
+        } else {
+          say('Form not connected yet: set FORM_ENDPOINT or MAILTO_FALLBACK in index.html.', true);
         }
+        return;
       }
-    }
-    // burst layer
-    fxCtx.clearRect(0,0,innerWidth,innerHeight);
-    bursts = bursts.filter(b=>b.life>0);
-    bursts.forEach(b=>{
-      b.x += b.vx; b.y += b.vy; b.vy += 0.025; b.life -= b.decay;
-      fxCtx.beginPath();
-      fxCtx.arc(b.x,b.y,Math.max(b.r*b.life,0),0,Math.PI*2);
-      fxCtx.fillStyle = `rgba(${b.color},${Math.max(b.life,0)})`;
-      fxCtx.shadowColor = `rgba(${b.color},0.8)`;
-      fxCtx.shadowBlur = 6;
-      fxCtx.fill();
-    });
-    fxCtx.shadowBlur = 0;
-    requestAnimationFrame(tick);
-  }
-  requestAnimationFrame(tick);
 
-  /* ============ HEADLINE ASSEMBLE EFFECT ============ */
-  function wrapWords(el){
-    if(el.dataset.wrapped) return;
-    const text = el.textContent;
-    const parts = text.split(/(\s+)/);
-    el.innerHTML = '';
-    parts.forEach(p=>{
-      if(/^\s+$/.test(p)){
-        el.appendChild(document.createTextNode(p));
-      } else if(p.length){
-        const span = document.createElement('span');
-        span.className = 'word-fly';
-        span.textContent = p;
-        el.appendChild(span);
+      submitBtn.disabled = true;
+      say('Sending…');
+      try {
+        const res = await fetch(FORM_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        if(!res.ok) throw new Error('HTTP ' + res.status);
+        form.reset();
+        say('You\'re on the list. We\'ll come back to you with specifics.');
+      } catch(err){
+        say('That didn\'t go through' + (MAILTO_FALLBACK ? ' — email ' + MAILTO_FALLBACK + ' instead.' : '. Try again in a moment.'), true);
+      } finally {
+        submitBtn.disabled = false;
       }
     });
-    el.dataset.wrapped = '1';
-  }
+  })();
 
-  function playHeadlineFX(scene){
-    const heading = scene.querySelector('h1, h2');
-    if(!heading) return;
-    wrapWords(heading);
-    const words = [...heading.querySelectorAll('.word-fly')];
-    if(reducedMotion){
-      words.forEach(w=>{ w.style.transform='none'; w.style.opacity='1'; });
+  /* ========================= REVEAL ON SCROLL ========================= */
+  (function(){
+    const items = document.querySelectorAll('.reveal');
+    if(!('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+      items.forEach(el=>el.classList.add('in'));
       return;
     }
-    const rects = words.map(w=>w.getBoundingClientRect());
-    words.forEach(w=>{
-      const rx = (Math.random()*2-1)*260;
-      const ry = (Math.random()*2-1)*150;
-      const rrot = (Math.random()*2-1)*45;
-      w.style.transition = 'none';
-      w.style.transform = `translate(${rx}px, ${ry}px) rotate(${rrot}deg) scale(.35)`;
-      w.style.opacity = '0';
-    });
-    heading.offsetHeight; // force reflow
-    words.forEach((w,i)=>{
-      const delay = i*70;
-      w.style.transition = `transform .6s cubic-bezier(.22,.85,.25,1.35) ${delay}ms, opacity .4s ease ${delay}ms`;
-      w.style.transform = 'translate(0,0) rotate(0) scale(1)';
-      w.style.opacity = '1';
-      setTimeout(()=>{
-        const r = rects[i];
-        spawnBurst(r.left+r.width/2, r.top+r.height/2, {count:9});
-      }, delay+560);
-    });
-  }
-
-  /* ============ SCENE NAVIGATION ============ */
-  const sceneIds = ['scene-gate','scene-video','scene-appeal','scene-archive','scene-alumni','scene-vision','scene-social','scene-pledge','scene-form'];
-  const scenes = sceneIds.map(id=>document.getElementById(id));
-  let current = 0;
-
-  const ctaLabels = ['', 'Keep Going', 'See the archive', 'Meet who came before', "See what we're building", 'Keep Going', 'Recharge the line', 'Add your story', ''];
-  const levelLabel = document.getElementById('levelLabel');
-  const thermHud = document.getElementById('thermHud');
-  const backLink = document.getElementById('backLink');
-  const keepGoing = document.getElementById('keepGoing');
-  const keepGoingLabel = document.getElementById('keepGoingLabel');
-
-  function pad(n){ return n<10 ? '0'+n : ''+n; }
-
-  function updateKeepGoing(){
-    if(current === 0){ keepGoing.classList.add('hidden'); return; }
-    keepGoing.classList.remove('hidden');
-    if(current === scenes.length-1){
-      keepGoingLabel.textContent = 'Play It Again';
-      keepGoing.dataset.mode = 'restart';
-    } else {
-      keepGoingLabel.textContent = ctaLabels[current];
-      keepGoing.dataset.mode = 'next';
-    }
-  }
-
-  function render(){
-    scenes.forEach((s,i)=> s.classList.toggle('current', i===current));
-    levelLabel.textContent = pad(current+1) + ' / ' + pad(scenes.length);
-    backLink.classList.toggle('show', current>0);
-    updateKeepGoing();
-    if(current >= 2) thermHud.classList.add('show');
-    if(current === 5 && !houseLit) lightHouse();
-    playHeadlineFX(scenes[current]);
-  }
-
-  function goTo(i){
-    if(i<0 || i>=scenes.length) return;
-    current = i;
-    render();
-  }
-  function next(){ goTo(current+1); }
-  function prev(){ goTo(current-1); }
-  function restart(){
-    document.querySelectorAll('.hand-btn').forEach(b=>b.classList.remove('picked'));
-    document.getElementById('personalizedLine').textContent = '';
-    goTo(0);
-  }
-
-  backLink.addEventListener('click', prev);
-
-  keepGoing.addEventListener('click', ()=>{
-    const rect = keepGoing.getBoundingClientRect();
-    spawnBurst(rect.left+rect.width/2, rect.top+rect.height/2, {count:24, speedMul:1.7, upward:true});
-    keepGoing.classList.add('zap');
-    setTimeout(()=>keepGoing.classList.remove('zap'), 280);
-    if(keepGoing.dataset.mode === 'restart'){ restart(); } else { next(); }
-  });
-
-  document.addEventListener('keydown', (e)=>{
-    const tag = (document.activeElement && document.activeElement.tagName || '').toLowerCase();
-    if(tag === 'input' || tag === 'textarea') return;
-    if(e.key === 'ArrowRight') next();
-    if(e.key === 'ArrowLeft') prev();
-  });
-
-  let touchStartX = null;
-  document.getElementById('gameViewport').addEventListener('touchstart', (e)=>{
-    const t = e.target.closest('input,textarea,button,select,a');
-    touchStartX = t ? null : e.touches[0].clientX;
-  }, {passive:true});
-  document.getElementById('gameViewport').addEventListener('touchend', (e)=>{
-    if(touchStartX === null) return;
-    const dx = e.changedTouches[0].clientX - touchStartX;
-    if(Math.abs(dx) > 50){ dx < 0 ? next() : prev(); }
-    touchStartX = null;
-  }, {passive:true});
-
-  /* ============ GATE ============ */
-  document.querySelectorAll('.hand-btn').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      document.querySelectorAll('.hand-btn').forEach(b=>b.classList.remove('picked'));
-      btn.classList.add('picked');
-      const r = btn.getBoundingClientRect();
-      spawnBurst(r.left+r.width/2, r.top+r.height/2, {count:16});
-      const n = btn.dataset.n;
-      const line = document.getElementById('personalizedLine');
-      if(n === '0'){ line.textContent = "You said zero out of five. Let's fix that."; }
-      else if(n === '5'){ line.textContent = "You said five out of five. That's the whole network — worth protecting."; }
-      else { line.textContent = `You said ${n} out of 5. That's a family worth investing in.`; }
-      setTimeout(next, 450);
-    });
-  });
-
-  /* ============ VIDEO ============ */
-  const playBtn = document.getElementById('playBtn');
-  const wave = document.getElementById('wave');
-  let playing = false;
-  playBtn.addEventListener('click', ()=>{
-    playing = !playing;
-    wave.classList.toggle('on', playing);
-    playBtn.style.opacity = playing ? '0.35' : '1';
-  });
-
-  /* ============ THERMOMETER ============ */
-  const GOAL = 5000000;
-  let raised = 1840000;
-  const smallFill = document.getElementById('thermFillSmall');
-  const smallAmt = document.getElementById('thermAmtSmall');
-  const bigFill = document.getElementById('bigThermFill');
-  const bigRaised = document.getElementById('bigThermRaised');
-  function fmt(n){ return '$' + Math.round(n).toLocaleString('en-US'); }
-  function renderTherm(){
-    const pct = Math.min(100, (raised/GOAL)*100);
-    smallFill.style.width = pct + '%';
-    bigFill.style.width = pct + '%';
-    smallAmt.textContent = fmt(raised) + ' / $5.0M';
-    bigRaised.textContent = fmt(raised);
-  }
-  renderTherm();
-
-  /* ============ HOUSE LIGHTING ============ */
-  let houseLit = false;
-  function lightHouse(){
-    houseLit = true;
-    const wins = document.querySelectorAll('#houseSvg .win');
-    wins.forEach((w,i)=> setTimeout(()=>{
-      w.classList.add('lit');
-      const r = w.getBoundingClientRect();
-      spawnBurst(r.left+r.width/2, r.top+r.height/2, {count:6});
-    }, i*220));
-  }
-
-  /* ============ PLEDGE ============ */
-  let pledgeAmt = 0;
-  const pledgeBtn = document.getElementById('pledgeBtn');
-  document.querySelectorAll('.pledge-opt').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      document.querySelectorAll('.pledge-opt').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      pledgeAmt = parseInt(btn.dataset.amt,10);
-      pledgeBtn.textContent = `Pledge ${fmt(pledgeAmt)}`;
-    });
-  });
-  document.getElementById('customAmtBtn').addEventListener('click', ()=>{
-    const val = parseInt(document.getElementById('customAmt').value.replace(/[^0-9]/g,''),10);
-    if(!isNaN(val) && val > 0){
-      document.querySelectorAll('.pledge-opt').forEach(b=>b.classList.remove('active'));
-      pledgeAmt = val;
-      pledgeBtn.textContent = `Pledge ${fmt(pledgeAmt)}`;
-    }
-  });
-  pledgeBtn.addEventListener('click', ()=>{
-    if(pledgeAmt <= 0){
-      document.getElementById('pledgeConfirm').textContent = 'Choose or enter an amount first.';
-      return;
-    }
-    raised += pledgeAmt;
-    renderTherm();
-    const r = pledgeBtn.getBoundingClientRect();
-    spawnBurst(r.left+r.width/2, r.top, {count:20, upward:true, speedMul:1.4});
-    document.getElementById('pledgeConfirm').textContent =
-      `Thanks — this is a demo, so nothing was charged. In production this recharges the meter by ${fmt(pledgeAmt)}.`;
-  });
-
-  /* ============ MEMENTO FORM ============ */
-  const fileDrop = document.getElementById('fileDrop');
-  const fileInput = document.getElementById('fFile');
-  const fileDropText = document.getElementById('fileDropText');
-  fileInput.addEventListener('change', ()=>{
-    if(fileInput.files.length){
-      fileDrop.classList.add('has-file');
-      fileDropText.textContent = fileInput.files[0].name;
-    }
-  });
-  document.getElementById('memoryForm').addEventListener('submit', (e)=>{
-    e.preventDefault();
-    document.getElementById('submitConfirm').textContent =
-      "Thanks — added to the archive. (Demo only: wire this form to a backend to store submissions for real.)";
-    e.target.reset();
-    fileDrop.classList.remove('has-file');
-    fileDropText.textContent = 'Tap to choose a file';
-  });
-
-  /* ============ INIT ============ */
-  render();
+    const io = new IntersectionObserver((entries)=>{
+      entries.forEach(entry=>{
+        if(entry.isIntersecting){ entry.target.classList.add('in'); io.unobserve(entry.target); }
+      });
+    }, { rootMargin: '0px 0px -12% 0px', threshold: 0.08 });
+    items.forEach(el=>io.observe(el));
+  })();
 </script>
 </body>
 </html>
