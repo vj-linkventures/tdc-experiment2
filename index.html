@@ -235,6 +235,25 @@
   .check input{flex:none;margin:3px 0 0;width:16px;height:16px;accent-color:var(--blue-bright);}
   .check-title{font-weight:600;font-size:14.5px;line-height:1.3;}
   .check-note{display:block;font-size:12.5px;color:var(--white-faint);margin-top:3px;line-height:1.45;}
+  .opt{text-transform:none;letter-spacing:0;color:#5f6a7c;}
+  .mentor-panel{
+    margin-top:14px;padding:18px 18px 20px;border:1px solid var(--line);border-left:2px solid var(--blue-bright);
+    border-radius:2px;background:rgba(27,79,160,.10);
+  }
+  .mentor-panel[hidden]{display:none;}
+  .mentor-intro{font-size:14px;color:var(--white-dim);max-width:62ch;}
+  .mentor-intro strong{color:var(--white);font-weight:600;}
+  .file-drop{
+    position:relative;border:1.5px dashed var(--line);border-radius:2px;padding:16px;text-align:center;
+    font-family:var(--mono);font-size:12px;color:var(--white-faint);
+    transition:border-color .2s ease,color .2s ease;
+  }
+  .file-drop:hover{border-color:var(--blue);color:var(--blue-light);}
+  .file-drop input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;}
+  .file-drop.has-file{border-style:solid;border-color:var(--blue-bright);color:var(--blue-light);}
+  .file-drop.too-big{border-color:#ff9a8a;color:#ff9a8a;}
+  .field-hint{margin-top:7px;font-family:var(--mono);font-size:10.5px;color:var(--white-faint);}
+  .field-hint.err{color:#ff9a8a;}
   .form-actions{margin-top:26px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;}
   .form-note{font-family:var(--mono);font-size:11px;color:var(--white-faint);flex:1 1 220px;min-width:0;}
   .form-status{margin-top:16px;font-family:var(--mono);font-size:12px;min-height:1.2em;color:var(--blue-light);}
@@ -489,10 +508,10 @@
                 </span>
               </label>
               <label class="check">
-                <input type="checkbox" name="interest" value="mentoring">
+                <input type="checkbox" name="interest" value="mentoring" id="chkMentoring">
                 <span>
                   <span class="check-title">Mentoring new startups</span>
-                  <span class="check-note">Advising undergrad founders coming out of the house.</span>
+                  <span class="check-note">Advising undergrad founders coming out of the house. Check this and we'll ask for your LinkedIn and resume.</span>
                 </span>
               </label>
               <label class="check">
@@ -502,6 +521,32 @@
                   <span class="check-note">Updates only, no ask attached.</span>
                 </span>
               </label>
+            </div>
+
+            <!-- revealed only when "Mentoring new startups" is checked -->
+            <div class="mentor-panel" id="mentorPanel" hidden>
+              <p class="mentor-intro">
+                <strong>This is how we match you to a founder.</strong> Share a LinkedIn profile and
+                any resume, bio or deck, and we'll use AI to summarize what you could advise on —
+                sectors, stage, functional depth. You'll see that summary and can correct it before
+                it's used for any introduction.
+              </p>
+
+              <div class="field">
+                <label for="fLinkedIn">LinkedIn profile <span class="opt">(optional)</span></label>
+                <input type="text" id="fLinkedIn" name="linkedin" inputmode="url"
+                       autocomplete="url" placeholder="linkedin.com/in/…">
+              </div>
+
+              <div class="field">
+                <label for="fFiles">Resume, bio, deck — anything that shows your work <span class="opt">(optional)</span></label>
+                <div class="file-drop" id="fileDrop">
+                  <span id="fileDropText">Choose files — PDF, DOC, DOCX, TXT, MD or RTF</span>
+                  <input type="file" id="fFiles" name="files" multiple
+                         accept=".pdf,.doc,.docx,.txt,.md,.rtf,application/pdf">
+                </div>
+                <p class="field-hint" id="fileHint">Up to 5 files, 15 MB total.</p>
+              </div>
             </div>
           </fieldset>
 
@@ -535,7 +580,7 @@
 
 <script>
   /* =========================================================
-     CONFIG — the three things to set before launch
+     CONFIG — set these before launch
      ========================================================= */
 
   // 1. Hosted copy of the emailed letter (web archive link, PDF, Google Doc, …).
@@ -545,11 +590,21 @@
   // 2. Where the interest form posts. Any endpoint accepting a JSON POST works
   //    (Formspree, Basin, a Google Apps Script web app, your own handler).
   //    Leave '' and the form falls back to MAILTO_FALLBACK.
+  //    NOTE: when a mentor attaches files the form switches to a multipart POST
+  //    to this same URL, so the endpoint must accept file uploads. If yours
+  //    doesn't, set ACCEPTS_UPLOADS to false and files are listed by name only.
   const FORM_ENDPOINT = '';
+  const ACCEPTS_UPLOADS = true;
 
   // 3. Fallback if FORM_ENDPOINT is empty: opens the visitor's mail client with
   //    their answers prefilled. Leave '' to disable and show a config notice instead.
+  //    Mail clients can't be handed attachments from a web page, so the draft
+  //    asks the sender to attach their files themselves.
   const MAILTO_FALLBACK = '';
+
+  // 4. Upload limits for mentor materials.
+  const MAX_FILES = 5;
+  const MAX_UPLOAD_MB = 15;
 
   /* ========================= LETTER LINK ========================= */
   (function(){
@@ -610,13 +665,77 @@
     // form.name would resolve to the form's own name attribute, so go through elements
     const el = form.elements;
 
+    /* ---- mentor panel: revealed by the "Mentoring new startups" checkbox ---- */
+    const mentorChk = document.getElementById('chkMentoring');
+    const mentorPanel = document.getElementById('mentorPanel');
+    const fileInput = document.getElementById('fFiles');
+    const fileDrop = document.getElementById('fileDrop');
+    const fileDropText = document.getElementById('fileDropText');
+    const fileHint = document.getElementById('fileHint');
+    const DEFAULT_DROP_TEXT = fileDropText.textContent;
+    const DEFAULT_HINT = fileHint.textContent;
+    let filesTooBig = false;
+
+    function syncMentorPanel(){
+      mentorPanel.hidden = !mentorChk.checked;
+    }
+    mentorChk.addEventListener('change', syncMentorPanel);
+    syncMentorPanel();
+
+    function fmtSize(bytes){
+      const mb = bytes / (1024*1024);
+      return mb < 1 ? Math.max(1, Math.round(bytes/1024)) + ' KB' : mb.toFixed(1) + ' MB';
+    }
+    function plural(n, word){ return n + ' ' + word + (n === 1 ? '' : 's'); }
+
+    function resetFileUI(){
+      fileDrop.classList.remove('has-file','too-big');
+      fileDropText.textContent = DEFAULT_DROP_TEXT;
+      fileHint.textContent = DEFAULT_HINT;
+      fileHint.classList.remove('err');
+      filesTooBig = false;
+    }
+
+    fileInput.addEventListener('change', function(){
+      const files = [...fileInput.files];
+      if(!files.length){ resetFileUI(); return; }
+
+      const total = files.reduce((sum,f)=>sum + f.size, 0);
+      filesTooBig = files.length > MAX_FILES || total > MAX_UPLOAD_MB * 1024 * 1024;
+
+      fileDrop.classList.toggle('has-file', !filesTooBig);
+      fileDrop.classList.toggle('too-big', filesTooBig);
+      fileDropText.textContent = files.length === 1
+        ? files[0].name
+        : plural(files.length, 'file') + ' selected';
+      fileHint.classList.toggle('err', filesTooBig);
+      fileHint.textContent = filesTooBig
+        ? 'Too much: ' + plural(files.length, 'file') + ', ' + fmtSize(total)
+          + '. Limit is ' + plural(MAX_FILES, 'file') + ' and ' + MAX_UPLOAD_MB + ' MB total.'
+        : fmtSize(total) + ' — ' + files.map(f=>f.name).join(', ');
+    });
+
+    // "linkedin.com/in/x" is what people actually type; make it a usable link
+    function normalizeUrl(value){
+      const v = value.trim();
+      if(!v) return '';
+      return /^https?:\/\//i.test(v) ? v : 'https://' + v.replace(/^\/+/, '');
+    }
+
+    function selectedFiles(){
+      return mentorChk.checked ? [...fileInput.files] : [];
+    }
+
     function collect(){
       const interests = [...form.querySelectorAll('input[name="interest"]:checked')].map(i=>i.value);
+      const files = selectedFiles();
       return {
         name: el.name.value.trim(),
         email: el.email.value.trim(),
         class_year: el.class_year.value.trim(),
         interest: interests,
+        linkedin: mentorChk.checked ? normalizeUrl(el.linkedin.value) : '',
+        attachments: files.map(f=>({ name: f.name, size: f.size })),
         notes: el.notes.value.trim(),
         page: location.href,
         submitted_at: new Date().toISOString()
@@ -624,18 +743,38 @@
     }
 
     function mailto(data){
-      const body = [
+      const lines = [
         'Name: ' + data.name,
         'Email: ' + data.email,
         'Class year: ' + (data.class_year || '—'),
-        'Interested in: ' + (data.interest.join(', ') || '—'),
-        '',
-        'Notes:',
-        data.notes || '—'
-      ].join('\n');
+        'Interested in: ' + (data.interest.join(', ') || '—')
+      ];
+      if(data.linkedin) lines.push('LinkedIn: ' + data.linkedin);
+      lines.push('', 'Notes:', data.notes || '—');
+      if(data.attachments.length){
+        lines.push('', 'Please attach before sending: '
+          + data.attachments.map(a=>a.name).join(', '));
+      }
       return 'mailto:' + MAILTO_FALLBACK
         + '?subject=' + encodeURIComponent('Re-charge the Charge — interest from ' + data.name)
-        + '&body=' + encodeURIComponent(body);
+        + '&body=' + encodeURIComponent(lines.join('\n'));
+    }
+
+    // Files can't ride along in JSON, so switch to multipart when any are attached
+    function buildRequest(data, files){
+      if(!files.length || !ACCEPTS_UPLOADS){
+        return {
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify(data)
+        };
+      }
+      const fd = new FormData();
+      Object.entries(data).forEach(([key, value])=>{
+        if(key === 'attachments') return; // the files themselves go below
+        fd.append(key, Array.isArray(value) ? value.join(', ') : value);
+      });
+      files.forEach(f=>fd.append('files', f, f.name));
+      return { headers: { 'Accept': 'application/json' }, body: fd };
     }
 
     form.addEventListener('submit', async function(e){
@@ -645,10 +784,15 @@
       if(!data.name){ say('Add your name first.', true); el.name.focus(); return; }
       if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)){ say('That email address looks incomplete.', true); el.email.focus(); return; }
       if(!data.interest.length){ say('Pick at least one way you want to help.', true); return; }
+      if(filesTooBig && mentorChk.checked){ say(fileHint.textContent, true); return; }
+
+      const files = selectedFiles();
 
       if(!FORM_ENDPOINT){
         if(MAILTO_FALLBACK){
-          say('Opening your email app to send this — hit send and you\'re in.');
+          say(files.length
+            ? 'Opening your email app — attach your files there, then hit send.'
+            : 'Opening your email app to send this — hit send and you\'re in.');
           window.location.href = mailto(data);
         } else {
           say('Form not connected yet: set FORM_ENDPOINT or MAILTO_FALLBACK in index.html.', true);
@@ -657,16 +801,17 @@
       }
 
       submitBtn.disabled = true;
-      say('Sending…');
+      say(files.length ? 'Uploading…' : 'Sending…');
       try {
-        const res = await fetch(FORM_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          body: JSON.stringify(data)
-        });
+        const req = buildRequest(data, files);
+        const res = await fetch(FORM_ENDPOINT, { method: 'POST', headers: req.headers, body: req.body });
         if(!res.ok) throw new Error('HTTP ' + res.status);
         form.reset();
-        say('You\'re on the list. We\'ll come back to you with specifics.');
+        resetFileUI();
+        syncMentorPanel();
+        say(files.length && ACCEPTS_UPLOADS
+          ? 'You\'re on the list, materials and all. We\'ll send you the summary to check before it goes anywhere.'
+          : 'You\'re on the list. We\'ll come back to you with specifics.');
       } catch(err){
         say('That didn\'t go through' + (MAILTO_FALLBACK ? ' — email ' + MAILTO_FALLBACK + ' instead.' : '. Try again in a moment.'), true);
       } finally {
