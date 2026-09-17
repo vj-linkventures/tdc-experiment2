@@ -9,8 +9,9 @@ single quiet scrolling page with four parts:
 1. **Hero + film** — the video carries the whole storyline; the copy around it just frames it.
 2. **Updates** — a timeline, opening with the site going live and a link to the emailed letter
    (~Sept 21, 2026), followed by a "coming soon" roll-up of what gets published next.
-3. **FAQ** — accordion. **All Q&A is deliberately fake placeholder copy**, sitting in the real
-   layout so the section can be reviewed and swapped one-for-one later.
+3. **FAQ** — accordion, eleven questions, final approved copy: ownership, management, who's
+   covering carrying costs, why the house is empty, the fall 2027 reopening goal, funding, and
+   who to contact.
 4. **Interest form** — donations / volunteering / mentoring new startups / updates-only.
    It captures intent, not money. Checking **Mentoring new startups** reveals a panel asking
    for a LinkedIn URL and any resume/bio/deck, so those can be run through an AI summarizer to
@@ -80,6 +81,9 @@ embedded until the visitor clicks play, so no third-party player loads on page v
   the no-endpoint notice.
 - Honors `prefers-reduced-motion`, and a `<noscript>` rule keeps every section visible if
   JavaScript is off.
-- Unlike experiment1, this page makes **no factual claims** — no founding year, no dollar
-  figures, no named alumni — so nothing needs fact-checking before it goes public. The only
-  date on the page is the Sept 21, 2026 update entry.
+- The FAQ carries real, load-bearing claims — House Corp.'s 1966 ownership, the 372 Management
+  Co. arrangement, who is funding carrying costs, the fall 2027 target. That copy was supplied
+  approved; treat any edit to it as a factual change, not a wording change.
+- Two names appear with no contact details (Román Cepeda '97, Matt Rita '89, in the last
+  question). Add emails or a link there so the closing answer is actionable.
+- The only date on the page is the Sept 21, 2026 update entry.
