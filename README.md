@@ -81,6 +81,11 @@ embedded until the visitor clicks play, so no third-party player loads on page v
   the no-endpoint notice.
 - Honors `prefers-reduced-motion`, and a `<noscript>` rule keeps every section visible if
   JavaScript is off.
+- A fixed **scroll cue** (bottom center) names the next section — Updates, FAQ, Get involved —
+  and scrolls to it when clicked, so the tall dark bands don't read as the end of the page. It
+  retires within 90px of the true bottom and inside the last section. Sections advertise their
+  cue label via `data-cue`, so adding a section to the sequence means adding that attribute;
+  the cue starts with class `gone` and is enabled by script, so it never appears empty.
 - The FAQ carries real, load-bearing claims — House Corp.'s 1966 ownership, the 372 Management
   Co. arrangement, who is funding carrying costs, the fall 2027 target. That copy was supplied
   approved; treat any edit to it as a factual change, not a wording change.
