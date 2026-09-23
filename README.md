@@ -88,17 +88,23 @@ Typeform plan — check yours covers them.
 
 ### Creating the Typeform
 
-`setup/typeform-setup.mjs` builds the form with hidden fields whose names match
-`TYPEFORM_FIELDS`. Hidden fields only work when declared on the form, so run this rather than
-hand-building it:
+**The no-terminal way.** On GitHub: **Actions** tab → **Connect the form to Typeform** →
+**Run workflow**. It reads `TYPEFORM_SECRET` from the repo secrets, creates the form with the
+right hidden fields, writes the new ID into `index.html` and commits it. Leave the input blank
+to create a form; paste an existing form's ID to reuse that one instead. The run summary prints
+the form ID and a link.
+
+**From a shell**, if you prefer:
 
 ```bash
-TYPEFORM_SECRET=tfp_xxx node setup/typeform-setup.mjs           # create it, prints the form ID
-TYPEFORM_SECRET=tfp_xxx node setup/typeform-setup.mjs --list    # list forms and their IDs
-TYPEFORM_SECRET=tfp_xxx node setup/typeform-setup.mjs --form-id AbCd1234   # update in place
+TYPEFORM_SECRET=tfp_xxx node setup/typeform-setup.mjs                      # create, prints the ID
+TYPEFORM_SECRET=tfp_xxx node setup/typeform-setup.mjs --write-index        # …and patch index.html
+TYPEFORM_SECRET=tfp_xxx node setup/typeform-setup.mjs --list               # list forms and IDs
+TYPEFORM_SECRET=tfp_xxx node setup/typeform-setup.mjs --form-id AbCd1234   # update that form
 ```
 
-Then set `TYPEFORM_ID` in `index.html` to the printed ID and commit.
+Hidden fields only work when declared on the form, which is why this is scripted rather than
+hand-built: prefill silently drops any field the form hasn't declared.
 
 The script builds one visible question — the optional file upload — behind a "One last step"
 welcome screen. To hide that upload from non-mentors entirely, add a Logic rule on it in the

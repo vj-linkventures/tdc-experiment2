@@ -1,0 +1,67 @@
+name: Connect the form to Typeform
+
+# No schedule, no push trigger — this only ever runs when you click the button.
+on:
+  workflow_dispatch:
+    inputs:
+      form_id:
+        description: "Leave blank to create a new Typeform. To reuse an existing one, paste its ID (the code in typeform.com/to/XXXXXXXX)."
+        required: false
+        default: ""
+
+jobs:
+  connect:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write        # so it can save the form ID back into index.html
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Check the token is there
+        env:
+          TYPEFORM_SECRET: ${{ secrets.TYPEFORM_SECRET }}
+        run: |
+          if [ -z "$TYPEFORM_SECRET" ]; then
+            echo "::error::No TYPEFORM_SECRET found. Add it under Settings -> Secrets and variables -> Actions -> New repository secret, named exactly TYPEFORM_SECRET."
+            exit 1
+          fi
+          echo "Token found."
+
+      - name: Create or update the Typeform
+        id: tf
+        env:
+          TYPEFORM_SECRET: ${{ secrets.TYPEFORM_SECRET }}
+          FORM_ID: ${{ inputs.form_id }}
+        run: |
+          if [ -n "$FORM_ID" ]; then
+            node setup/typeform-setup.mjs --form-id "$FORM_ID" --write-index
+          else
+            node setup/typeform-setup.mjs --write-index
+          fi
+
+      - name: Save the form ID into the site
+        run: |
+          if git diff --quiet -- index.html; then
+            echo "index.html already pointed at this form — nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Point the interest form at Typeform ${{ steps.tf.outputs.form_id }}"
+          git push
+
+      - name: What happened
+        run: |
+          echo "### Typeform connected :white_check_mark:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Form ID:** \`${{ steps.tf.outputs.form_id }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Your form:** ${{ steps.tf.outputs.form_link }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The site now sends submissions here. Responses appear in your Typeform account." >> $GITHUB_STEP_SUMMARY

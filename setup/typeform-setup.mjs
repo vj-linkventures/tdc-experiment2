@@ -17,6 +17,8 @@
  * of index.html: anything in that file is public the moment the site deploys.
  */
 
+import fs from 'node:fs';
+
 const API = 'https://api.typeform.com';
 const TOKEN = process.env.TYPEFORM_SECRET || process.env.TYPEFORM_TOKEN;
 
@@ -160,6 +162,29 @@ async function main() {
   console.log(`Form ID:  ${id}`);
   console.log(`Live at:  ${link}`);
   console.log(`Hidden fields: ${HIDDEN_FIELDS.join(', ')}`);
+  // Hand the ID back to GitHub Actions so the workflow can report it
+  if (process.env.GITHUB_OUTPUT) {
+    fs.appendFileSync(process.env.GITHUB_OUTPUT, `form_id=${id}\nform_link=${link}\n`);
+  }
+
+  if (arg('--write-index')) {
+    const file = 'index.html';
+    const html = fs.readFileSync(file, 'utf8');
+    const pattern = /(const TYPEFORM_ID = ')[^']*(';)/;
+    if (!pattern.test(html)) {
+      console.error(`\nCould not find the TYPEFORM_ID line in ${file} — set it by hand.`);
+      process.exit(1);
+    }
+    const updated = html.replace(pattern, `$1${id}$2`);
+    if (updated === html) {
+      console.log(`\n${file} already points at ${id} — nothing to change.`);
+    } else {
+      fs.writeFileSync(file, updated);
+      console.log(`\nUpdated ${file}: TYPEFORM_ID = '${id}'`);
+    }
+    return;
+  }
+
   console.log(`\nNext: set  const TYPEFORM_ID = '${id}';  in index.html, then commit.`);
   console.log('Test the prefill with:');
   console.log(`  ${link}?name=Test&email=test%40example.com&interest=mentoring`);
