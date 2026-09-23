@@ -44,14 +44,36 @@ async function api(path, options = {}) {
   return text ? JSON.parse(text) : null;
 }
 
-/** The form the handoff lands on: a short confirmation, plus the mentor upload. */
-function formDefinition() {
+/**
+ * A theme in the site's palette, so the popup doesn't look like a stranger.
+ * Typeform renders inside a cross-origin iframe, so this theme is the only way
+ * to style those screens — page CSS cannot reach in.
+ */
+function themeDefinition() {
+  return {
+    name: 'Re-charge the Charge',
+    font: 'Source Sans Pro',
+    colors: {
+      question: '#F2F5FA',
+      answer: '#9FC3F0',
+      button: '#1B4FA0',
+      background: '#06080D',
+    },
+  };
+}
+
+/**
+ * The form the popup lands on. Note that hidden fields prefill *data*, not
+ * visible answer boxes — Typeform has no way to pre-answer a question — so this
+ * form asks only for what the site cannot carry over: the uploaded files.
+ */
+function formDefinition(themeHref) {
   return {
     title: FORM_TITLE,
     type: 'form',
+    theme: themeHref ? { href: themeHref } : undefined,
     settings: {
       is_public: true,
-      progress_bar: 'proportion',
       show_progress_bar: false,
     },
     hidden: HIDDEN_FIELDS,
@@ -61,7 +83,7 @@ function formDefinition() {
         title: 'One last step',
         properties: {
           description:
-            "Your answers came over from the site. Confirm below — and if you're offering to mentor, attach a resume, bio or deck so we can summarize what you could advise on.",
+            "Your answers came over from the site. Confirm to send them — and if you're offering to mentor, you can attach a resume, bio or deck on the next screen.",
           show_button: true,
           button_text: 'Confirm',
         },
@@ -75,16 +97,7 @@ function formDefinition() {
         validations: { required: false },
         properties: {
           description:
-            'Mentors only — skip this if it does not apply. You will see the AI summary we draft from it and can correct it before it is used for any introduction.',
-        },
-      },
-      {
-        ref: 'confirm_email',
-        title: 'Confirm the best email to reach you',
-        type: 'email',
-        validations: { required: true },
-        properties: {
-          description: 'Prefilled from the site — correct it here if it is wrong.',
+            'Mentors only — skip this if it does not apply. You will see the AI summary we draft from it, and can correct it before it is used for any introduction.',
         },
       },
     ],
@@ -123,7 +136,17 @@ async function main() {
     return;
   }
 
-  const definition = stripUndefined(formDefinition());
+  // The theme is a nicety — if the account or plan rejects it, carry on unthemed.
+  let themeHref;
+  try {
+    const theme = await api('/themes', { method: 'POST', body: JSON.stringify(themeDefinition()) });
+    themeHref = theme._links?.self || `${API}/themes/${theme.id}`;
+    console.log(`Theme created: ${theme.name}`);
+  } catch (err) {
+    console.warn(`Theme skipped (${err.message.split('\n')[0]}) — set colors in the editor instead.`);
+  }
+
+  const definition = stripUndefined(formDefinition(themeHref));
   const formId = arg('--form-id');
 
   const form = formId
@@ -138,8 +161,13 @@ async function main() {
   console.log(`Live at:  ${link}`);
   console.log(`Hidden fields: ${HIDDEN_FIELDS.join(', ')}`);
   console.log(`\nNext: set  const TYPEFORM_ID = '${id}';  in index.html, then commit.`);
-  console.log('Test the handoff with:');
-  console.log(`  ${link}?name=Test&email=test%40example.com&interest=mentoring\n`);
+  console.log('Test the prefill with:');
+  console.log(`  ${link}?name=Test&email=test%40example.com&interest=mentoring`);
+  console.log(
+    '\nOptional, in the Typeform editor: add a Logic rule on "Resume, bio or deck"\n' +
+      'so it is skipped when the hidden field `interest` does not contain "mentoring".\n' +
+      'Without it, non-mentors simply see an optional upload they can skip.\n'
+  );
 }
 
 main().catch((err) => {

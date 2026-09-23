@@ -703,9 +703,10 @@
   // 2. The Typeform that collects submissions. Use the SHORT ID from the form's
   //    URL — typeform.com/to/XXXXXXXX — not the form's name.
   //    Typeform has no API for submitting a response, so this page validates the
-  //    answers, then hands off to the Typeform with every answer preloaded into a
-  //    hidden field. The respondent confirms (and attaches files) on that screen,
-  //    which is what writes the response into Typeform.
+  //    answers, then opens the Typeform in a popup over the page with every answer
+  //    preloaded into a hidden field. The respondent confirms (and attaches files)
+  //    there, which is what writes the response into Typeform. If the embed script
+  //    can't load, the page falls back to a full-page handoff to the same form.
   //    Run setup/typeform-setup.mjs once to create the form with hidden fields
   //    whose names match TYPEFORM_FIELDS below.
   const TYPEFORM_ID = '';
@@ -876,7 +877,48 @@
         + '&body=' + encodeURIComponent(lines.join('\n'));
     }
 
-    form.addEventListener('submit', function(e){
+    /* ---- Typeform embed SDK, loaded on first submit ----
+       Deliberately not loaded on page view: no third-party script runs until
+       someone actually submits, same rule the video player follows. */
+    const EMBED_JS = 'https://embed.typeform.com/next/embed.js';
+    const EMBED_CSS = 'https://embed.typeform.com/next/css/popup.css';
+    const EMBED_TIMEOUT_MS = 8000;
+    let embedPromise = null;
+
+    function loadEmbed(){
+      if(embedPromise) return embedPromise;
+      embedPromise = new Promise(function(resolve, reject){
+        if(window.tf && window.tf.createPopup) return resolve(window.tf);
+
+        const css = document.createElement('link');
+        css.rel = 'stylesheet';
+        css.href = EMBED_CSS;
+        document.head.appendChild(css);
+
+        const js = document.createElement('script');
+        js.src = EMBED_JS;
+        js.async = true;
+        const timer = setTimeout(function(){ reject(new Error('embed timed out')); }, EMBED_TIMEOUT_MS);
+        js.onload = function(){
+          clearTimeout(timer);
+          if(window.tf && window.tf.createPopup) resolve(window.tf);
+          else reject(new Error('embed loaded without createPopup'));
+        };
+        js.onerror = function(){ clearTimeout(timer); reject(new Error('embed blocked')); };
+        document.head.appendChild(js);
+      });
+      return embedPromise;
+    }
+
+    function hiddenFields(data){
+      const out = {};
+      Object.entries(TYPEFORM_FIELDS).forEach(([key, hiddenName])=>{
+        if(data[key]) out[hiddenName] = data[key];
+      });
+      return out;
+    }
+
+    form.addEventListener('submit', async function(e){
       e.preventDefault();
       const data = collect();
 
@@ -894,11 +936,41 @@
         return;
       }
 
+      const wasMentor = mentorChk.checked;
       submitBtn.disabled = true;
-      say(mentorChk.checked
-        ? 'Taking you to the last step — confirm and attach your materials there.'
-        : 'Taking you to the last step — one tap to confirm.');
-      window.location.href = typeformUrl(data);
+      say('Opening the last step…');
+
+      let tf;
+      try {
+        tf = await loadEmbed();
+      } catch(err){
+        // SDK blocked or slow — fall back to the full-page handoff, which needs
+        // nothing but the URL, so the submission still lands in Typeform.
+        say('Taking you to the last step…');
+        window.location.href = typeformUrl(data);
+        return;
+      }
+
+      let recorded = false;
+      const popup = tf.createPopup(TYPEFORM_ID, {
+        hidden: hiddenFields(data),
+        size: 80,
+        medium: 'tdc-teaser-site',
+        onSubmit: function(){ recorded = true; },
+        onClose: function(){
+          submitBtn.disabled = false;
+          if(recorded){
+            form.reset();
+            syncMentorPanel();
+            say(wasMentor
+              ? 'You\'re on the list, materials and all. We\'ll send you the summary to check before it goes anywhere.'
+              : 'You\'re on the list. We\'ll come back to you with specifics.');
+          } else {
+            say('Nothing sent yet — hit Count me in when you\'re ready.', true);
+          }
+        }
+      });
+      popup.open();
     });
   })();
 

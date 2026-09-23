@@ -53,24 +53,38 @@ Everything lives in one `CONFIG` block at the top of the `<script>` in `index.ht
 **Typeform has no API for submitting a response.** Its API creates and edits forms, reads and
 deletes responses, and manages webhooks — but nothing writes a response. A response only exists
 once a human completes the Typeform itself. Hidden-field prefill *displays* values; it does not
-submit them. So a custom HTML form cannot POST into Typeform, with or without a backend proxy.
+submit them, and Typeform cannot pre-answer a visible question. So a custom HTML form cannot
+POST into Typeform, with or without a backend proxy.
 
-What this page does instead:
+What the page does instead:
 
-1. The visitor fills in the form here. All validation and the conditional mentor panel run as
-   before — nothing about that UI changed.
-2. On submit, the page builds `https://form.typeform.com/to/<TYPEFORM_ID>?name=…&email=…` with
-   every answer in a hidden field, and navigates there.
-3. The visitor lands on a short confirm screen — plus a file upload for mentor materials — and
-   submitting *that* is what records the response, hidden fields and all.
+1. The visitor fills in the form here. All validation and the conditional mentor panel run
+   exactly as before — the page UI is untouched by the Typeform switch.
+2. On submit, the page loads the Typeform embed SDK and opens the form **in a popup over the
+   page**, passing every answer as a hidden field.
+3. The visitor confirms — attaching files if they're a mentor — and that submission is what
+   records the response. `onSubmit` fires, the page resets the form and shows its own
+   confirmation line; closing without submitting says so rather than pretending it sent.
 
-Two consequences worth knowing:
+Details worth knowing:
 
-- **There's one extra click.** Anyone who abandons the Typeform screen is not recorded anywhere,
-  so treat the Typeform's completion rate as the real conversion number.
-- **File uploads happen on the Typeform side**, which is why the in-page file picker was
-  removed — a URL handoff cannot carry a file. The mentor panel now says the attachment comes
-  on the next screen. Typeform stores the files, which also solves where resumes live.
+- **The SDK is only fetched on first submit**, never on page view, so no third-party script
+  runs for someone who just reads the page — the same rule the video player follows.
+- **If the embed can't load** (blocked, offline, slow: 8s timeout) the page falls back to a
+  full-page handoff to the same form with the same hidden fields, so the submission still
+  lands. Both paths are exercised in the Chromium tests.
+- **File uploads happen on the Typeform side**, which is why there's no in-page file picker:
+  neither a URL nor a hidden field can carry a file. Typeform stores them, which also settles
+  where resumes live.
+- **Anyone who closes the popup without submitting is not recorded** anywhere — the page keeps
+  no copy. Typeform's completion rate is the real conversion number.
+- **Styling inside the popup is Typeform's**, not this page's: it's a cross-origin iframe, so
+  the site's CSS cannot reach in. The setup script creates a theme in the site palette
+  (`#06080D` background, `#1B4FA0` buttons, `#F2F5FA` text) to keep it from looking like a
+  stranger, and skips the theme rather than failing if the account rejects it.
+
+Hidden fields, logic rules, file-upload questions and custom fonts each depend on the
+Typeform plan — check yours covers them.
 
 ### Creating the Typeform
 
@@ -85,6 +99,11 @@ TYPEFORM_SECRET=tfp_xxx node setup/typeform-setup.mjs --form-id AbCd1234   # upd
 ```
 
 Then set `TYPEFORM_ID` in `index.html` to the printed ID and commit.
+
+The script builds one visible question — the optional file upload — behind a "One last step"
+welcome screen. To hide that upload from non-mentors entirely, add a Logic rule on it in the
+Typeform editor: skip when the hidden field `interest` does not contain `mentoring`. Left
+alone, non-mentors just see an optional upload they can skip.
 
 ### About the token
 
@@ -110,8 +129,9 @@ embedded until the visitor clicks play, so no third-party player loads on page v
 - Single self-contained `index.html`; no build step, no dependencies. Drop it on GitHub Pages
   (Settings → Pages → deploy from `main` / root) or any static host.
 - Verified rendering at 1280px and 390px, no horizontal overflow. Exercised in Chromium: form
-  validation, the mentor panel's reveal/hide, the Typeform handoff (all six hidden fields
-  arrive correctly encoded, including the normalized LinkedIn URL), and the no-Typeform notice.
+  validation, the mentor panel's reveal/hide, the popup handoff (all six hidden fields arrive
+  correctly encoded, including the normalized LinkedIn URL), submit vs. close-without-submit,
+  the blocked-SDK fallback to a full-page handoff, and the no-Typeform notice.
 - Honors `prefers-reduced-motion`, and a `<noscript>` rule keeps every section visible if
   JavaScript is off.
 - A fixed **scroll cue** (bottom center) names the next section — Updates, FAQ, Get involved —
