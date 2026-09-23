@@ -15,10 +15,14 @@ single quiet scrolling page with four parts:
 4. **Interest form** — donations / volunteering / mentoring new startups / updates-only.
    It captures intent, not money. Checking **Mentoring new startups** reveals a panel asking
    for a LinkedIn URL, and tells mentors their resume/bio/deck is attached on the following
-   Typeform screen, so those can be run through an AI summarizer to
-   draft what each person could advise on. The panel says plainly that the summary goes back to
-   them to correct before it's used for an introduction — worth keeping if you rewrite the copy,
-   since people are handing over a resume on the strength of it.
+   Typeform screen, so those can be run through an AI summarizer to draft what each person
+   could advise on.
+
+   The copy states the intent to summarize and nothing more. An earlier draft also promised
+   each mentor would see and correct that summary before it was used for an introduction —
+   removed, because no part of this system does that. If you build a review step later, put
+   the promise back; until then it would be a claim the site can't keep, made to people who
+   are handing over a resume.
 
 ## Branding
 

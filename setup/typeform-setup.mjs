@@ -99,7 +99,7 @@ function formDefinition(themeHref) {
         validations: { required: false },
         properties: {
           description:
-            'Mentors only — skip this if it does not apply. You will see the AI summary we draft from it, and can correct it before it is used for any introduction.',
+            'Mentors only — skip this if it does not apply.',
         },
       },
     ],
