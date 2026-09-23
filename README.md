@@ -14,7 +14,8 @@ single quiet scrolling page with four parts:
    who to contact.
 4. **Interest form** — donations / volunteering / mentoring new startups / updates-only.
    It captures intent, not money. Checking **Mentoring new startups** reveals a panel asking
-   for a LinkedIn URL and any resume/bio/deck, so those can be run through an AI summarizer to
+   for a LinkedIn URL, and tells mentors their resume/bio/deck is attached on the following
+   Typeform screen, so those can be run through an AI summarizer to
    draft what each person could advise on. The panel says plainly that the summary goes back to
    them to correct before it's used for an introduction — worth keeping if you rewrite the copy,
    since people are handing over a resume on the strength of it.
@@ -43,25 +44,58 @@ Everything lives in one `CONFIG` block at the top of the `<script>` in `index.ht
 | Constant | What it does | Empty / default behavior |
 | --- | --- | --- |
 | `LETTER_URL` | Hosted copy of the emailed letter | "Read the letter" link hides itself |
-| `FORM_ENDPOINT` | URL the interest form posts to (Formspree, Basin, an Apps Script web app, your own handler) | falls back to `MAILTO_FALLBACK` |
-| `MAILTO_FALLBACK` | Address that receives prefilled submissions if there's no endpoint | form shows a "not connected yet" notice |
-| `ACCEPTS_UPLOADS` | Whether `FORM_ENDPOINT` can take file uploads | `true` |
-| `MAX_FILES` / `MAX_UPLOAD_MB` | Client-side caps on mentor materials | 5 files, 15 MB total |
+| `TYPEFORM_ID` | Short ID of the collecting Typeform — the code in `typeform.com/to/XXXXXXXX`, **not** the form's name | falls back to `MAILTO_FALLBACK` |
+| `TYPEFORM_FIELDS` | Maps our field names to the Typeform's hidden-field names | already matches `setup/typeform-setup.mjs` |
+| `MAILTO_FALLBACK` | Address that receives prefilled submissions if there's no Typeform | form shows a "not connected yet" notice |
 
-### How submissions are sent
+## How the Typeform backend works
 
-- **No files attached** → JSON POST to `FORM_ENDPOINT`.
-- **Files attached** → the same URL, but as a `multipart/form-data` POST with the files under
-  the field name `files`. Your endpoint has to accept uploads; if it doesn't, set
-  `ACCEPTS_UPLOADS = false` and submissions stay JSON with the filenames listed under
-  `attachments` instead, so you know what to ask for by email.
-- **No endpoint at all** → the `MAILTO_FALLBACK` draft. A web page can't attach files to a
-  mail client, so the draft ends with a line naming the files and asking the sender to attach
-  them. Anyone serious about collecting resumes should set a real endpoint.
+**Typeform has no API for submitting a response.** Its API creates and edits forms, reads and
+deletes responses, and manages webhooks — but nothing writes a response. A response only exists
+once a human completes the Typeform itself. Hidden-field prefill *displays* values; it does not
+submit them. So a custom HTML form cannot POST into Typeform, with or without a backend proxy.
 
-Over the file caps, the drop zone turns red, names the overage, and submit is blocked until
-it's fixed. A LinkedIn URL typed without a scheme (`linkedin.com/in/…`) is normalized to
-`https://` before it's sent.
+What this page does instead:
+
+1. The visitor fills in the form here. All validation and the conditional mentor panel run as
+   before — nothing about that UI changed.
+2. On submit, the page builds `https://form.typeform.com/to/<TYPEFORM_ID>?name=…&email=…` with
+   every answer in a hidden field, and navigates there.
+3. The visitor lands on a short confirm screen — plus a file upload for mentor materials — and
+   submitting *that* is what records the response, hidden fields and all.
+
+Two consequences worth knowing:
+
+- **There's one extra click.** Anyone who abandons the Typeform screen is not recorded anywhere,
+  so treat the Typeform's completion rate as the real conversion number.
+- **File uploads happen on the Typeform side**, which is why the in-page file picker was
+  removed — a URL handoff cannot carry a file. The mentor panel now says the attachment comes
+  on the next screen. Typeform stores the files, which also solves where resumes live.
+
+### Creating the Typeform
+
+`setup/typeform-setup.mjs` builds the form with hidden fields whose names match
+`TYPEFORM_FIELDS`. Hidden fields only work when declared on the form, so run this rather than
+hand-building it:
+
+```bash
+TYPEFORM_SECRET=tfp_xxx node setup/typeform-setup.mjs           # create it, prints the form ID
+TYPEFORM_SECRET=tfp_xxx node setup/typeform-setup.mjs --list    # list forms and their IDs
+TYPEFORM_SECRET=tfp_xxx node setup/typeform-setup.mjs --form-id AbCd1234   # update in place
+```
+
+Then set `TYPEFORM_ID` in `index.html` to the printed ID and commit.
+
+### About the token
+
+The token is only ever used by that script, from a shell. **It must never go into
+`index.html`** — this is a public repo serving a static site, so anything in that file is
+readable by anyone, and a Typeform token can read and delete every response on the account.
+
+A secret stored in **GitHub repository secrets is not available to a GitHub Pages site** either:
+those are exposed only inside GitHub Actions runs, never to the browser. There is nothing the
+page needs it for — the handoff URL is public by design, exactly like a Typeform link in an
+email.
 
 **The video** is set on the `#videoFrame` element in the markup, not in the config block:
 
@@ -76,9 +110,8 @@ embedded until the visitor clicks play, so no third-party player loads on page v
 - Single self-contained `index.html`; no build step, no dependencies. Drop it on GitHub Pages
   (Settings → Pages → deploy from `main` / root) or any static host.
 - Verified rendering at 1280px and 390px, no horizontal overflow. Exercised in Chromium: form
-  validation, the mentor panel's reveal/hide, the oversize-file guard, the multipart upload
-  (confirmed both files and the normalized LinkedIn URL reach the endpoint), the JSON path, and
-  the no-endpoint notice.
+  validation, the mentor panel's reveal/hide, the Typeform handoff (all six hidden fields
+  arrive correctly encoded, including the normalized LinkedIn URL), and the no-Typeform notice.
 - Honors `prefers-reduced-motion`, and a `<noscript>` rule keeps every section visible if
   JavaScript is off.
 - A fixed **scroll cue** (bottom center) names the next section — Updates, FAQ, Get involved —
