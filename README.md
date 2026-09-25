@@ -37,7 +37,8 @@ Setting it up once:
    what's on the site today, import `faq-template.csv` from this repo (File → Import → Upload).
 2. **File → Share → Publish to web** → choose the tab → **Comma-separated values (.csv)** →
    **Publish**. Copy the link it gives you.
-3. Put that link in `FAQ_SHEET_CSV` at the top of the script in `index.html`.
+3. Put that link in `FAQ_SHEET_CSV` at the top of the script in `index.html`. (Already wired
+   to the live sheet — replace the URL only if the sheet moves.)
 4. Share the sheet (normal Google sharing) with whoever should be able to edit the FAQ.
 
 From then on, an edit in the sheet shows up on the site within a few minutes — Google caches
