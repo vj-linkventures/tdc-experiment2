@@ -98,8 +98,17 @@ function formDefinition(themeHref) {
         type: 'file_upload',
         validations: { required: false },
         properties: {
+          description: 'Mentors only — skip this if it does not apply.',
+        },
+      },
+      {
+        ref: 'media',
+        title: 'Photos, video or memorabilia',
+        type: 'file_upload',
+        validations: { required: false },
+        properties: {
           description:
-            'Mentors only — skip this if it does not apply.',
+            'Anything the brotherhood would want to see. Skip this if it does not apply — and if it is too big to upload, a share link in the notes works just as well.',
         },
       },
     ],

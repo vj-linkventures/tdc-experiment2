@@ -11,7 +11,8 @@ single quiet scrolling page with four parts:
    (~Sept 21, 2026), followed by a "coming soon" roll-up of what gets published next.
 3. **FAQ** — accordion, eleven questions, final approved copy: ownership, management, who's
    covering carrying costs, why the house is empty, the fall 2027 reopening goal, funding, and
-   who to contact.
+   who to contact. Editable by non-developers from a Google Sheet — see **Letting others edit
+   the FAQ** below.
 4. **Interest form** — donations / volunteering / mentoring new startups / updates-only.
    It captures intent, not money. Checking **Mentoring new startups** reveals a panel asking
    for a LinkedIn URL, and tells mentors their resume/bio/deck is attached on the following
@@ -23,6 +24,36 @@ single quiet scrolling page with four parts:
    removed, because no part of this system does that. If you build a review step later, put
    the promise back; until then it would be a claim the site can't keep, made to people who
    are handing over a resume.
+
+## Letting others edit the FAQ
+
+The questions live in `index.html` and also work as the fallback, but pointing `FAQ_SHEET_CSV`
+at a published Google Sheet lets anyone you share that sheet with rewrite the FAQ — no code,
+no deploy, no GitHub account. The page reads the sheet on each load.
+
+Setting it up once:
+
+1. Make a new Google Sheet with two columns headed **Question** and **Answer**. To start from
+   what's on the site today, import `faq-template.csv` from this repo (File → Import → Upload).
+2. **File → Share → Publish to web** → choose the tab → **Comma-separated values (.csv)** →
+   **Publish**. Copy the link it gives you.
+3. Put that link in `FAQ_SHEET_CSV` at the top of the script in `index.html`.
+4. Share the sheet (normal Google sharing) with whoever should be able to edit the FAQ.
+
+From then on, an edit in the sheet shows up on the site within a few minutes — Google caches
+published output briefly.
+
+How it fails, deliberately:
+
+- Sheet deleted, unpublished, or unreachable → the built-in questions stay on screen. The FAQ
+  is never empty.
+- A row missing a question or an answer is skipped, so a half-written row can't blank anything.
+- **Sheet text is inserted as text, never as markup.** A pasted `<script>` shows up as literal
+  characters. The one exception is `[label](https://example.com)`, which becomes a real link —
+  that way an editor can add links without being able to inject HTML. Line breaks are kept.
+
+Publishing to the web makes the sheet's contents public to anyone with the link, which is fine
+for FAQ copy — just don't keep anything private on that tab.
 
 ## Branding
 

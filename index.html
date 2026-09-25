@@ -432,10 +432,10 @@
       <div class="timeline">
 
         <article class="entry reveal">
-          <div class="entry-date">September 21, 2026</div>
+          <div class="entry-date">September 2026</div>
           <h3>This site is live — and the letter is out.</h3>
           <p>
-            A letter went out to the brotherhood today laying out why we're recharging the Charge now,
+            A letter went out to the brotherhood laying out why we're recharging the Charge now,
             what the plan looks like, and what we're asking for. This site is its companion: the film
             above tells the story, and this section is where the plan gets filled in from here.
           </p>
@@ -474,7 +474,9 @@
         </p>
       </div>
 
-      <div class="faq reveal">
+      <!-- The questions below are the built-in copy and the fallback. If
+           FAQ_SHEET_CSV is set, whatever is in that sheet replaces them. -->
+      <div class="faq reveal" id="faqList">
         <details>
           <summary>Has the house been sold?</summary>
           <div class="answer">
@@ -625,12 +627,31 @@
                 </span>
               </label>
               <label class="check">
+                <input type="checkbox" name="interest" value="content" id="chkContent">
+                <span>
+                  <span class="check-title">Photos, video, memorabilia</span>
+                  <span class="check-note">Pics, footage or anything else the brotherhood would want to see.</span>
+                </span>
+              </label>
+              <label class="check">
                 <input type="checkbox" name="interest" value="updates">
                 <span>
                   <span class="check-title">Just keep me posted</span>
                   <span class="check-note">Updates only, no ask attached.</span>
                 </span>
               </label>
+            </div>
+
+            <!-- revealed only when "Photos, video, memorabilia" is checked -->
+            <div class="mentor-panel" id="contentPanel" hidden>
+              <p class="mentor-intro">
+                <strong>Bring the archive back.</strong> You&rsquo;ll upload your photos and video on
+                the next screen, right after you hit <em>Count me in</em>.
+              </p>
+              <p class="mentor-upload-note">
+                Too big to upload, or a whole album? Paste a Google Drive, Dropbox, YouTube or
+                photo-album link in <em>Anything else</em> below and we&rsquo;ll grab it from there.
+              </p>
             </div>
 
             <!-- revealed only when "Mentoring new startups" is checked -->
@@ -721,7 +742,16 @@
     notes:      'notes'
   };
 
-  // 3. Fallback if TYPEFORM_ID is empty: opens the visitor's mail client with
+  // 3. FAQ source. Leave '' and the questions written into index.html are used.
+  //    Set it to a Google Sheet published as CSV and that sheet becomes the FAQ,
+  //    editable by anyone you share the sheet with, no code change and no deploy:
+  //      File → Share → Publish to web → pick the tab → Comma-separated values
+  //    The sheet needs two columns headed Question and Answer. Rows missing
+  //    either one are skipped, so a half-written row can't blank the section.
+  //    If the sheet is unreachable, the built-in questions stay on screen.
+  const FAQ_SHEET_CSV = '';
+
+  // 4. Fallback if TYPEFORM_ID is empty: opens the visitor's mail client with
   //    their answers prefilled. Leave '' to disable and show a config notice instead.
   const MAILTO_FALLBACK = '';
 
@@ -758,6 +788,87 @@
     window.matchMedia('(min-width:701px)').addEventListener('change', function(ev){
       if(ev.matches) setOpen(false);
     });
+  })();
+
+  /* ========================= FAQ FROM A SHEET =========================
+     Lets a few admins edit the FAQ in a Google Sheet instead of this file.
+     The questions in the markup are the fallback: if the sheet is missing,
+     unpublished, empty or unreachable, they simply stay on screen. */
+  (function(){
+    if(!FAQ_SHEET_CSV) return;
+    const list = document.getElementById('faqList');
+    if(!list) return;
+
+    // Quoted fields can hold commas and newlines, so parse properly
+    function parseCsv(text){
+      const rows = [];
+      let row = [], field = '', inQuotes = false;
+      for(let i = 0; i < text.length; i++){
+        const c = text[i];
+        if(inQuotes){
+          if(c === '"'){
+            if(text[i+1] === '"'){ field += '"'; i++; }
+            else inQuotes = false;
+          } else field += c;
+        }
+        else if(c === '"'){ inQuotes = true; }
+        else if(c === ','){ row.push(field); field = ''; }
+        else if(c === '\n'){ row.push(field); rows.push(row); row = []; field = ''; }
+        else if(c !== '\r'){ field += c; }
+      }
+      if(field || row.length){ row.push(field); rows.push(row); }
+      return rows;
+    }
+
+    // Sheet content is typed by people, so it goes in as text, never as markup.
+    // [label](https://…) is the one exception, rebuilt as a real link.
+    function escapeHtml(s){
+      return s.replace(/[&<>"']/g, c => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+      })[c]);
+    }
+    function renderAnswer(text){
+      return escapeHtml(text)
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+|mailto:[^\s)]+)\)/g,
+          '<a href="$2" target="_blank" rel="noopener">$1</a>')
+        .replace(/\n/g, '<br>');
+    }
+
+    function columnIndexes(header){
+      const lower = header.map(h => h.trim().toLowerCase());
+      const q = lower.indexOf('question');
+      const a = lower.indexOf('answer');
+      return q !== -1 && a !== -1 ? { q, a, hasHeader: true } : { q: 0, a: 1, hasHeader: false };
+    }
+
+    function build(rows){
+      const { q, a, hasHeader } = columnIndexes(rows[0] || []);
+      const items = rows.slice(hasHeader ? 1 : 0)
+        .map(r => ({ question: (r[q] || '').trim(), answer: (r[a] || '').trim() }))
+        .filter(item => item.question && item.answer);
+      if(!items.length) return null;
+
+      const frag = document.createDocumentFragment();
+      items.forEach(item => {
+        const details = document.createElement('details');
+        const summary = document.createElement('summary');
+        summary.textContent = item.question;          // text, never markup
+        const answer = document.createElement('div');
+        answer.className = 'answer';
+        answer.innerHTML = renderAnswer(item.answer); // escaped above
+        details.append(summary, answer);
+        frag.appendChild(details);
+      });
+      return frag;
+    }
+
+    fetch(FAQ_SHEET_CSV, { cache: 'no-store' })
+      .then(res => { if(!res.ok) throw new Error('HTTP ' + res.status); return res.text(); })
+      .then(text => {
+        const frag = build(parseCsv(text));
+        if(frag){ list.replaceChildren(frag); }
+      })
+      .catch(() => { /* keep the built-in questions */ });
   })();
 
   /* ========================= LETTER LINK ========================= */
@@ -819,15 +930,24 @@
     // form.name would resolve to the form's own name attribute, so go through elements
     const el = form.elements;
 
-    /* ---- mentor panel: revealed by the "Mentoring new startups" checkbox ---- */
+    /* ---- panels revealed by their own checkbox ---- */
     const mentorChk = document.getElementById('chkMentoring');
-    const mentorPanel = document.getElementById('mentorPanel');
+    const contentChk = document.getElementById('chkContent');
+    const panels = [
+      [mentorChk, document.getElementById('mentorPanel')],
+      [contentChk, document.getElementById('contentPanel')]
+    ];
 
-    function syncMentorPanel(){
-      mentorPanel.hidden = !mentorChk.checked;
+    function syncPanels(){
+      panels.forEach(([box, panel])=>{ panel.hidden = !box.checked; });
     }
-    mentorChk.addEventListener('change', syncMentorPanel);
-    syncMentorPanel();
+    panels.forEach(([box])=> box.addEventListener('change', syncPanels));
+    syncPanels();
+
+    // either one means the visitor has files to hand over on the Typeform screen
+    function hasUploads(){
+      return mentorChk.checked || contentChk.checked;
+    }
 
     // "linkedin.com/in/x" is what people actually type; make it a usable link
     function normalizeUrl(value){
@@ -871,6 +991,7 @@
       if(data.linkedin) lines.push('LinkedIn: ' + data.linkedin);
       lines.push('', 'Notes:', data.notes || '—');
       if(mentorChk.checked) lines.push('', 'Mentor materials: please attach a resume, bio or deck.');
+      if(contentChk.checked) lines.push('', 'Photos/video: please attach them, or paste a share link above.');
       return 'mailto:' + MAILTO_FALLBACK
         + '?subject=' + encodeURIComponent('Re-charge the Charge — interest from ' + data.name)
         + '&body=' + encodeURIComponent(lines.join('\n'));
@@ -935,7 +1056,7 @@
         return;
       }
 
-      const wasMentor = mentorChk.checked;
+      const hadUploads = hasUploads();
       submitBtn.disabled = true;
       say('Opening the last step…');
 
@@ -960,9 +1081,9 @@
           submitBtn.disabled = false;
           if(recorded){
             form.reset();
-            syncMentorPanel();
-            say(wasMentor
-              ? 'You\'re on the list, materials and all. We\'ll be in touch.'
+            syncPanels();
+            say(hadUploads
+              ? 'You\'re on the list, uploads and all. We\'ll be in touch.'
               : 'You\'re on the list. We\'ll come back to you with specifics.');
           } else {
             say('Nothing sent yet — hit Count me in when you\'re ready.', true);
